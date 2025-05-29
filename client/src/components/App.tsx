@@ -11,6 +11,7 @@ import {
   Legend
 } from 'chart.js';
 import './App.css';
+import WaterLevel from './WaterLevel';
 
 // Enregistrer les composants nécessaires pour Chart.js
 ChartJS.register(
@@ -252,41 +253,9 @@ const generateMockData = (hours: number): SensorData[] => {
           </div>
 
           {/* Niveau d'eau */}
-          <div className="bg-white rounded-md shadow p-3">
+          <div className="bg-white rounded-md shadow p-3 max-w-xs mx-auto">
             <h2 className="text-lg font-medium text-gray-700 mb-2">Niveau d'eau</h2>
-            <div className="relative h-48 bg-gray-200 rounded-md overflow-hidden">
-              <div
-                className={`absolute bottom-0 w-full transition-all duration-500 ${
-                  waterLevel.level < 20
-                    ? 'bg-red-500'
-                    : waterLevel.level < 40
-                    ? 'bg-orange-500'
-                    : 'bg-blue-500'
-                }`}
-                style={{ height: `${waterLevel.level}%` }}
-              ></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="font-bold text-2xl text-white drop-shadow-md">
-                  {waterLevel.level}%
-                </span>
-              </div>
-            </div>
-            <div className="mt-4 flex justify-between items-center">
-              <span className="text-sm text-gray-600">Critique</span>
-              <div className="w-full h-2 bg-gray-300 rounded-full mx-2 relative">
-                <div
-                  className={`absolute h-2 rounded-full ${
-                    waterLevel.level < 20
-                      ? 'bg-red-500'
-                      : waterLevel.level < 40
-                      ? 'bg-orange-500'
-                      : 'bg-blue-500'
-                  }`}
-                  style={{ width: `${waterLevel.level}%` }}
-                ></div>
-              </div>
-              <span className="text-sm text-gray-600">Plein</span>
-            </div>
+            <WaterLevel level={waterLevel.level} />
             {waterLevel.level < 20 && (
               <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
                 Niveau critique! Remplissez le réservoir dès que possible.
