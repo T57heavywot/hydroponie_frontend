@@ -13,7 +13,6 @@ import {
 import './App.css';
 import WaterLevel from './WaterLevel';
 
-// Enregistrer les composants nécessaires pour Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -78,15 +77,15 @@ const generateMockData = (hours: number): SensorData[] => {
       const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
       data.push({
         timestamp: timestamp.toISOString(),
-        temperature: 20 + Math.random() * 5, // Entre 20°C et 25°C
-        humidity: 40 + Math.random() * 20, // Entre 40% et 60%
-        lightLevel: 500 + Math.random() * 300, // Entre 500 et 800 lux
+        temperature: 20 + Math.random() * 5,
+        humidity: 40 + Math.random() * 20,
+        lightLevel: 500 + Math.random() * 300,
         nutrients: {
           nitrogen: 200 + Math.random() * 100, // PPM
           phosphorus: 50 + Math.random() * 30,
           potassium: 150 + Math.random() * 50
         },
-        ph: 5.5 + Math.random() * 2, // Entre 5.5 et 7.5
+        ph: 5.5 + Math.random() * 2,
         ec: 1.2 + Math.random() * 0.6 // Conductivité électrique en mS/cm
       });
     }
@@ -112,7 +111,6 @@ const generateMockData = (hours: number): SensorData[] => {
         {
           label,
           data: sensorData.map(data => {
-            // @ts-ignore
             return typeof data[dataKey] === 'object' ? null : data[dataKey];
           }),
           borderColor: color,
@@ -138,7 +136,6 @@ const generateMockData = (hours: number): SensorData[] => {
     },
   };
 
-  // Préparer les données pour le graphique de nutriments
   const getNutrientsChartData = () => {
     if (!sensorData.length) return null;
 
