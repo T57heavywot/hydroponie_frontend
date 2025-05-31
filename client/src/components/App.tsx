@@ -12,6 +12,7 @@ import {
 } from 'chart.js';
 import './App.css';
 import WaterLevel from './WaterLevel';
+import SystemHistoryChart from './SystemHistoryChart';
 
 ChartJS.register(
   CategoryScale,
@@ -46,6 +47,7 @@ function App() {
   const [waterLevel, setWaterLevel] = useState<WaterLevel>({ level: 0 });
   const [selectedHours, setSelectedHours] = useState<number>(6);
   const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<string>('Surveillance');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,7 +72,8 @@ function App() {
 
     return () => clearInterval(interval);
   }, [selectedHours]);
-const generateMockData = (hours: number): SensorData[] => {
+
+  const generateMockData = (hours: number): SensorData[] => {
     const now = new Date();
     const data: SensorData[] = [];
     for (let i = hours ; i >= 0; i--) {
@@ -182,92 +185,144 @@ const generateMockData = (hours: number): SensorData[] => {
           </h1>
         </div>
       </header>
+      {/* Onglets wireframe sous le header */}
+      <nav className="bg-white border-b border-gray-300">
+        <div className="container mx-auto px-6 flex space-x-2">
+          {['Capteurs', 'Eau', 'Nutriments', 'Historique'].map(tab => (
+            <button
+              key={tab}
+              className={`px-4 py-2 mt-1 border-b-2 font-medium transition-colors duration-150 focus:outline-none ${activeTab === tab ? 'border-green-600 text-green-700' : 'border-transparent text-gray-700 hover:text-green-600'}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </nav>
       <main className="container mx-auto py-8 px-6">
-        {/* Time Range Selector */}
-        <div className="mb-6 bg-white rounded-lg shadow-md p-4">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">Sélectionner une plage horaire</h2>
-          <div className="flex flex-wrap gap-2">
-            {[3, 6, 12, 24].map((hours) => (
-              <button
-                key={hours}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  selectedHours === hours
-                    ? 'bg-green-500 text-white shadow-md'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-                onClick={() => handleHoursChange(hours)}
-              >
-                {hours} heures
-              </button>
-            ))}
+        {activeTab === 'Eau' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-lg shadow-md p-8 flex flex-col items-center border border-gray-400">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 text-left w-full">Niveau d'eau du réservoir</h2>
+              <WaterLevel level={waterLevel.level} />
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-8 flex flex-col items-center border border-gray-400">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 text-left w-full">Niveau d'eau du bac du système</h2>
+              <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
+              {waterLevel.level - 55 < 20 && (
+                <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+                  Niveau critique! Remplissez le réservoir dès que possible.
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Graphiques */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Graphique d'humidité */}
-          <div className="bg-white rounded-lg shadow-md p-5">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution de l'humidité</h2>
-            {getChartData('humidity', 'Humidité (%)', '#3b82f6') && (
-              <Line
-                data={getChartData('humidity', 'Humidité (%)', '#3b82f6')!}
-                options={chartOptions}
-              />
-            )}
+        ) : activeTab === 'Nutriments' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-lg shadow-md p-8 border border-gray-400 flex flex-col justify-center">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6">Évolution des nutriments</h2>
+              {getNutrientsChartData() && (
+                <Line
+                  data={getNutrientsChartData()!}
+                  options={chartOptions}
+                />
+              )}
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-8 border border-gray-400">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6">Ajout des nutriments</h2>
+              <form className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <label className="w-56">Quantité d'azote à ajouter :</label>
+                  <input type="text" className="border border-gray-400 rounded px-2 py-1 w-16 text-center font-mono" placeholder="xx" />
+                  <button type="button" className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100">Ajouter</button>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <label className="w-56">Quantité de Phosphore à ajouter :</label>
+                  <input type="text" className="border border-gray-400 rounded px-2 py-1 w-16 text-center font-mono" placeholder="yy" />
+                  <button type="button" className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100">Ajouter</button>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <label className="w-56">Quantité de Potassium à ajouter :</label>
+                  <input type="text" className="border border-gray-400 rounded px-2 py-1 w-16 text-center font-mono" placeholder="zz" />
+                  <button type="button" className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100">Ajouter</button>
+                </div>
+              </form>
+            </div>
           </div>
-
-          {/* Graphique de luminosité */}
-          <div className="bg-white rounded-lg shadow-md p-5">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution de la luminosité</h2>
-            {getChartData('lightLevel', 'Luminosité (lux)', '#eab308') && (
-              <Line
-                data={getChartData('lightLevel', 'Luminosité (lux)', '#eab308')!}
-                options={chartOptions}
-              />
-            )}
+        ) : activeTab === 'Historique' ? (
+          <div className="bg-white rounded-lg shadow-md p-8 border border-gray-400 relative">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">Évolution du système dans le temps</h2>
+            <div className="absolute right-8 top-8">
+              <button className="px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100">Exporter en CSV</button>
+            </div>
+            <div className="mt-8">
+              <SystemHistoryChart sensorData={sensorData} />
+            </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Graphique d'humidité */}
+            <div className="bg-white rounded-lg shadow-md p-5">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution de l'humidité</h2>
+              {getChartData('humidity', 'Humidité (%)', '#3b82f6') && (
+                <Line
+                  data={getChartData('humidity', 'Humidité (%)', '#3b82f6')!}
+                  options={chartOptions}
+                />
+              )}
+            </div>
 
-          {/* Graphique de pH */}
-          <div className="bg-white rounded-lg shadow-md p-5">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution du pH</h2>
-            {getChartData('ph', 'pH', '#a855f7') && (
-              <Line
-                data={getChartData('ph', 'pH', '#a855f7')!}
-                options={chartOptions}
-              />
-            )}
+            {/* Graphique de luminosité */}
+            <div className="bg-white rounded-lg shadow-md p-5">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution de la luminosité</h2>
+              {getChartData('lightLevel', 'Luminosité (lux)', '#eab308') && (
+                <Line
+                  data={getChartData('lightLevel', 'Luminosité (lux)', '#eab308')!}
+                  options={chartOptions}
+                />
+              )}
+            </div>
+
+            {/* Graphique de pH */}
+            <div className="bg-white rounded-lg shadow-md p-5">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution du pH</h2>
+              {getChartData('ph', 'pH', '#a855f7') && (
+                <Line
+                  data={getChartData('ph', 'pH', '#a855f7')!}
+                  options={chartOptions}
+                />
+              )}
+            </div>
+
+            {/* Graphique des nutriments */}
+            <div className="bg-white rounded-lg shadow-md p-5">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution des nutriments</h2>
+              {getNutrientsChartData() && (
+                <Line
+                  data={getNutrientsChartData()!}
+                  options={chartOptions}
+                />
+              )}
+            </div>
+
+            {/* Niveau d'eau */}
+            <div className="bg-white rounded-md shadow p-3 max-w-xs mx-auto">
+              <h2 className="text-lg font-medium text-gray-700 mb-2">Niveau d'eau</h2>
+              <WaterLevel level={waterLevel.level} />
+              {waterLevel.level < 20 && (
+                <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+                  Niveau critique! Remplissez le réservoir dès que possible.
+                </div>
+              )}
+              {waterLevel.level >= 20 && waterLevel.level < 40 && (
+                <div className="mt-4 p-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
+                  Niveau bas. Pensez à remplir le réservoir prochainement.
+                </div>
+              )}
+            </div>
           </div>
-
-          {/* Graphique des nutriments */}
-          <div className="bg-white rounded-lg shadow-md p-5">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution des nutriments</h2>
-            {getNutrientsChartData() && (
-              <Line
-                data={getNutrientsChartData()!}
-                options={chartOptions}
-              />
-            )}
-          </div>
-
-          {/* Niveau d'eau */}
-          <div className="bg-white rounded-md shadow p-3 max-w-xs mx-auto">
-            <h2 className="text-lg font-medium text-gray-700 mb-2">Niveau d'eau</h2>
-            <WaterLevel level={waterLevel.level} />
-            {waterLevel.level < 20 && (
-              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                Niveau critique! Remplissez le réservoir dès que possible.
-              </div>
-            )}
-            {waterLevel.level >= 20 && waterLevel.level < 40 && (
-              <div className="mt-4 p-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
-                Niveau bas. Pensez à remplir le réservoir prochainement.
-              </div>
-            )}
-          </div>
-        </div>
-
+        )}
         {/* Information Box */}
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-400">
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-400 mt-6">
           <h3 className="text-lg font-medium text-yellow-800 mb-2">
             Note pour l'implémentation
           </h3>
