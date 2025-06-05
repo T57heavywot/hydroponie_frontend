@@ -47,7 +47,18 @@ function App() {
   const [waterLevel, setWaterLevel] = useState<WaterLevel>({ level: 0 });
   const [selectedHours, setSelectedHours] = useState<number>(6);
   const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>('Surveillance');
+  const [activeTab, setActiveTab] = useState<string>('Graphiques');
+  const [selectCharts, setSelectCharts] = useState(false);
+  const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
+
+  // Liste des graphiques disponibles
+  const chartList = [
+    { key: 'oxygen', label: "Oxygène dissous", dataKey: 'humidity', color: '#3b82f6' },
+    { key: 'ec', label: "Conductivité", dataKey: 'ec', color: '#a855f7' },
+    { key: 'ph', label: "pH", dataKey: 'ph', color: '#a855f7' },
+    { key: 'temperature', label: "Température ambiante du réservoir d'eau", dataKey: 'temperature', color: '#3b82f6' },
+    { key: 'humidity', label: "Humidité ambiante", dataKey: 'humidity', color: '#a855f7' },
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -175,6 +186,50 @@ function App() {
     };
 };
 
+  // Gestion de la sélection des graphiques
+  const handleChartSelect = (key: string) => {
+    setSelectedCharts((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  // Gestion de l’export CSV des graphiques sélectionnés
+  const handleExportCSV = () => {
+    if (!selectCharts || selectedCharts.length === 0) return;
+    // Préparer les entêtes CSV
+    let csv = 'Heure';
+    chartList.forEach(chart => {
+      if (selectedCharts.includes(chart.key)) {
+        csv += `;${chart.label}`;
+      }
+    });
+    csv += '\n';
+    // Pour chaque point de temps, ajouter les valeurs sélectionnées
+    sensorData.forEach((data) => {
+      const date = new Date(data.timestamp);
+      const hour = date.getHours() + ':' + (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
+      let row = `${hour}`;
+      chartList.forEach(chart => {
+        if (selectedCharts.includes(chart.key)) {
+          // Récupérer la valeur (attention à dataKey)
+          const value = typeof data[chart.dataKey as keyof SensorData] === 'object' ? '' : data[chart.dataKey as keyof SensorData];
+          row += `;${value}`;
+        }
+      });
+      csv += row + '\n';
+    });
+    // Télécharger le CSV
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'export_graphiques.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -188,7 +243,7 @@ function App() {
       {/* Onglets wireframe sous le header */}
       <nav className="bg-white border-b border-gray-300">
         <div className="container mx-auto px-6 flex space-x-2">
-          {['Capteurs', 'Eau', 'Nutriments', 'Historique'].map(tab => (
+          {["Graphiques", "Eau", "Nutriments", "Historique"].map(tab => (
             <button
               key={tab}
               className={`px-4 py-2 mt-1 border-b-2 font-medium transition-colors duration-150 focus:outline-none ${activeTab === tab ? 'border-green-600 text-green-700' : 'border-transparent text-gray-700 hover:text-green-600'}`}
@@ -200,7 +255,53 @@ function App() {
         </div>
       </nav>
       <main className="container mx-auto py-8 px-6">
-        {activeTab === 'Eau' ? (
+        {activeTab === 'Graphiques' ? (
+          <div>
+            {/* Barre de sélection en haut */}
+            <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between border border-gray-300">
+              <div className="flex items-center gap-2 mb-2 md:mb-0">
+                {[3, 6, 12, 24].map((hours) => (
+                  <button
+                    key={hours}
+                    className={`px-3 py-1 border border-gray-400 rounded bg-gray-100 font-semibold ${selectedHours === hours ? 'bg-green-500 text-white' : ''}`}
+                    onClick={() => handleHoursChange(hours)}
+                  >
+                    {hours} heures
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="mr-2 text-gray-700">Sélection des graphiques</span>
+                <input type="checkbox" className="toggle toggle-sm" checked={selectCharts} onChange={() => setSelectCharts(v => !v)} />
+                <button className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100 disabled:opacity-50" disabled={!selectCharts || selectedCharts.length === 0} onClick={handleExportCSV}>Exporter en CSV</button>
+              </div>
+            </div>
+            {/* Grille des graphiques avec sélection */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {chartList.map(chart => {
+                const chartData = getChartData(chart.dataKey as any, chart.label, chart.color);
+                return (
+                  <div key={chart.key} className={`bg-white rounded-lg shadow-md p-4 border border-gray-300 relative`}>
+                    {selectCharts && (
+                      <input
+                        type="checkbox"
+                        className="absolute top-2 right-2 w-5 h-5"
+                        checked={selectedCharts.includes(chart.key)}
+                        onChange={() => handleChartSelect(chart.key)}
+                      />
+                    )}
+                    <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
+                    {chartData ? (
+                      <Line data={chartData} options={chartOptions} />
+                    ) : (
+                      <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : activeTab === 'Eau' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white rounded-lg shadow-md p-8 flex flex-col items-center border border-gray-400">
               <h2 className="text-xl font-semibold text-gray-800 mb-6 text-left w-full">Niveau d'eau du réservoir</h2>
@@ -258,69 +359,7 @@ function App() {
               <SystemHistoryChart sensorData={sensorData} />
             </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Graphique d'humidité */}
-            <div className="bg-white rounded-lg shadow-md p-5">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution de l'humidité</h2>
-              {getChartData('humidity', 'Humidité (%)', '#3b82f6') && (
-                <Line
-                  data={getChartData('humidity', 'Humidité (%)', '#3b82f6')!}
-                  options={chartOptions}
-                />
-              )}
-            </div>
-
-            {/* Graphique de luminosité */}
-            <div className="bg-white rounded-lg shadow-md p-5">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution de la luminosité</h2>
-              {getChartData('lightLevel', 'Luminosité (lux)', '#eab308') && (
-                <Line
-                  data={getChartData('lightLevel', 'Luminosité (lux)', '#eab308')!}
-                  options={chartOptions}
-                />
-              )}
-            </div>
-
-            {/* Graphique de pH */}
-            <div className="bg-white rounded-lg shadow-md p-5">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution du pH</h2>
-              {getChartData('ph', 'pH', '#a855f7') && (
-                <Line
-                  data={getChartData('ph', 'pH', '#a855f7')!}
-                  options={chartOptions}
-                />
-              )}
-            </div>
-
-            {/* Graphique des nutriments */}
-            <div className="bg-white rounded-lg shadow-md p-5">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Évolution des nutriments</h2>
-              {getNutrientsChartData() && (
-                <Line
-                  data={getNutrientsChartData()!}
-                  options={chartOptions}
-                />
-              )}
-            </div>
-
-            {/* Niveau d'eau */}
-            <div className="bg-white rounded-md shadow p-3 max-w-xs mx-auto">
-              <h2 className="text-lg font-medium text-gray-700 mb-2">Niveau d'eau</h2>
-              <WaterLevel level={waterLevel.level} />
-              {waterLevel.level < 20 && (
-                <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                  Niveau critique! Remplissez le réservoir dès que possible.
-                </div>
-              )}
-              {waterLevel.level >= 20 && waterLevel.level < 40 && (
-                <div className="mt-4 p-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
-                  Niveau bas. Pensez à remplir le réservoir prochainement.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        ) : null}
         {/* Information Box */}
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-400 mt-6">
           <h3 className="text-lg font-medium text-yellow-800 mb-2">
