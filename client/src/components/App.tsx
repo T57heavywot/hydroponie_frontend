@@ -47,7 +47,7 @@ function App() {
   const [waterLevel, setWaterLevel] = useState<WaterLevel>({ level: 0 });
   const [selectedHours, setSelectedHours] = useState<number>(6);
   const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>('Graphiques');
+  const [activeTab, setActiveTab] = useState<string>('Accueil');
   const [selectCharts, setSelectCharts] = useState(false);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
 
@@ -230,6 +230,9 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  // Récupérer la dernière valeur pour chaque catégorie
+  const latestData = sensorData.length > 0 ? sensorData[sensorData.length - 1] : null;
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -243,7 +246,7 @@ function App() {
       {/* Onglets wireframe sous le header */}
       <nav className="bg-white border-b border-gray-300">
         <div className="container mx-auto px-6 flex space-x-2">
-          {["Graphiques", "Eau", "Nutriments", "Historique"].map(tab => (
+          {["Accueil", "Graphiques", "Commandes"].map(tab => (
             <button
               key={tab}
               className={`px-4 py-2 mt-1 border-b-2 font-medium transition-colors duration-150 focus:outline-none ${activeTab === tab ? 'border-green-600 text-green-700' : 'border-transparent text-gray-700 hover:text-green-600'}`}
@@ -255,7 +258,55 @@ function App() {
         </div>
       </nav>
       <main className="container mx-auto py-8 px-6">
-        {activeTab === 'Graphiques' ? (
+        {activeTab === 'Accueil' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Oxygène dissous */}
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
+              <h2 className="text-base font-semibold text-blue-900 mb-1">Oxygène dissous</h2>
+              <span className="text-3xl font-extrabold text-blue-600 mb-1">{latestData ? latestData.humidity.toFixed(1) + ' %' : '--'}</span>
+              <span className="text-xs text-blue-400">Dernière mesure</span>
+            </div>
+            {/* Conductivité */}
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow p-6 flex flex-col items-center border border-purple-200 hover:shadow-lg transition">
+              <h2 className="text-base font-semibold text-purple-900 mb-1">Conductivité</h2>
+              <span className="text-3xl font-extrabold text-purple-600 mb-1">{latestData ? latestData.ec.toFixed(2) + ' mS/cm' : '--'}</span>
+              <span className="text-xs text-purple-400">Dernière mesure</span>
+            </div>
+            {/* Température ambiante du réservoir d'eau */}
+            <div className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow p-6 flex flex-col items-center border border-sky-200 hover:shadow-lg transition">
+              <h2 className="text-base font-semibold text-sky-900 mb-1">Température ambiante du réservoir</h2>
+              <span className="text-3xl font-extrabold text-sky-600 mb-1">{latestData ? latestData.temperature.toFixed(1) + ' °C' : '--'}</span>
+              <span className="text-xs text-sky-400">Dernière mesure</span>
+            </div>
+            {/* pH du réservoir */}
+            <div className="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow p-6 flex flex-col items-center border border-fuchsia-200 hover:shadow-lg transition">
+              <h2 className="text-base font-semibold text-fuchsia-900 mb-1">pH du réservoir</h2>
+              <span className="text-3xl font-extrabold text-fuchsia-600 mb-1">{latestData ? latestData.ph.toFixed(2) : '--'}</span>
+              <span className="text-xs text-fuchsia-400">Dernière mesure</span>
+            </div>
+            {/* Humidité ambiante du système */}
+            <div className="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow p-6 flex flex-col items-center border border-violet-200 hover:shadow-lg transition">
+              <h2 className="text-base font-semibold text-violet-900 mb-1">Humidité ambiante</h2>
+              <span className="text-3xl font-extrabold text-violet-600 mb-1">{latestData ? latestData.humidity.toFixed(1) + ' %' : '--'}</span>
+              <span className="text-xs text-violet-400">Dernière mesure</span>
+            </div>
+            {/* Niveau d'eau du réservoir */}
+            <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow p-6 flex flex-col items-center border border-cyan-200 hover:shadow-lg transition">
+              <h2 className="text-base font-semibold text-cyan-900 mb-1">Niveau d'eau du réservoir</h2>
+              <WaterLevel level={waterLevel.level} />
+            </div>
+            {/* Niveau d'eau du bac du système */}
+            <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow p-6 flex flex-col items-center border border-rose-200 hover:shadow-lg transition">
+              <h2 className="text-base font-semibold text-rose-900 mb-1">Niveau d'eau du bac du système</h2>
+              <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
+              {waterLevel.level - 55 < 20 && (
+                <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+                  Niveau critique! Remplissez le réservoir dès que possible.
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeTab === 'Graphiques' ? (
           <div>
             {/* Barre de sélection en haut */}
             <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between border border-gray-300">
@@ -301,62 +352,38 @@ function App() {
               })}
             </div>
           </div>
-        ) : activeTab === 'Eau' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-lg shadow-md p-8 flex flex-col items-center border border-gray-400">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 text-left w-full">Niveau d'eau du réservoir</h2>
-              <WaterLevel level={waterLevel.level} />
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-8 flex flex-col items-center border border-gray-400">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 text-left w-full">Niveau d'eau du bac du système</h2>
-              <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
-              {waterLevel.level - 55 < 20 && (
-                <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                  Niveau critique! Remplissez le réservoir dès que possible.
+        ) : activeTab === 'Commandes' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Bloc Commandes */}
+            <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-center border border-gray-300 min-h-[340px]">
+              <div className="flex flex-col gap-8">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-700">Ouverture des valves</span>
+                  <div className="flex gap-4">
+                    <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">Ouverture</button>
+                    <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">Fermeture</button>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        ) : activeTab === 'Nutriments' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-lg shadow-md p-8 border border-gray-400 flex flex-col justify-center">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Évolution des nutriments</h2>
-              {getNutrientsChartData() && (
-                <Line
-                  data={getNutrientsChartData()!}
-                  options={chartOptions}
-                />
-              )}
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-8 border border-gray-400">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Ajout des nutriments</h2>
-              <form className="space-y-6">
-                <div className="flex items-center space-x-4">
-                  <label className="w-56">Quantité d'azote à ajouter :</label>
-                  <input type="text" className="border border-gray-400 rounded px-2 py-1 w-16 text-center font-mono" placeholder="xx" />
-                  <button type="button" className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100">Ajouter</button>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-700">Ajouter des nutriments</span>
+                  <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">Ajouter</button>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <label className="w-56">Quantité de Phosphore à ajouter :</label>
-                  <input type="text" className="border border-gray-400 rounded px-2 py-1 w-16 text-center font-mono" placeholder="yy" />
-                  <button type="button" className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100">Ajouter</button>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-700">Remplir le bac d'eau du système</span>
+                  <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">Remplir</button>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <label className="w-56">Quantité de Potassium à ajouter :</label>
-                  <input type="text" className="border border-gray-400 rounded px-2 py-1 w-16 text-center font-mono" placeholder="zz" />
-                  <button type="button" className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100">Ajouter</button>
-                </div>
-              </form>
+              </div>
             </div>
-          </div>
-        ) : activeTab === 'Historique' ? (
-          <div className="bg-white rounded-lg shadow-md p-8 border border-gray-400 relative">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">Évolution du système dans le temps</h2>
-            <div className="absolute right-8 top-8">
-              <button className="px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100">Exporter en CSV</button>
-            </div>
-            <div className="mt-8">
-              <SystemHistoryChart sensorData={sensorData} />
+            {/* Bloc graphique Conductivité */}
+            <div className="bg-white rounded-xl shadow p-8 flex flex-col border border-gray-300 min-h-[340px]">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Évolution de la conductivité</h2>
+              <div className="flex-1 min-h-[220px]">
+                {getChartData('ec', 'Conductivité', '#a855f7') ? (
+                  <Line data={getChartData('ec', 'Conductivité', '#a855f7')!} options={chartOptions} />
+                ) : (
+                  <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
+                )}
+              </div>
             </div>
           </div>
         ) : null}
