@@ -34,8 +34,12 @@ interface SensorData {
     phosphorus: number;
     potassium: number;
   };
-  ph: number;
-  ec: number;
+  phReservoir: number;
+  phBac: number;
+  ecReservoir: number;
+  ecBac: number;
+  oxygenReservoir: number;
+  oxygenBac: number;
 }
 
 interface WaterLevel {
@@ -53,10 +57,13 @@ function App() {
 
   // Liste des graphiques disponibles
   const chartList = [
-    { key: 'oxygen', label: "Oxygène dissous", dataKey: 'humidity', color: '#3b82f6' },
-    { key: 'ec', label: "Conductivité", dataKey: 'ec', color: '#a855f7' },
-    { key: 'ph', label: "pH", dataKey: 'ph', color: '#a855f7' },
-    { key: 'temperature', label: "Température ambiante du réservoir d'eau", dataKey: 'temperature', color: '#3b82f6' },
+    { key: 'oxygenReservoir', label: "Oxygène dissous (réservoir)", dataKey: 'oxygenReservoir', color: '#3b82f6' },
+    { key: 'oxygenBac', label: "Oxygène dissous (bac)", dataKey: 'oxygenBac', color: '#2563eb' },
+    { key: 'ecReservoir', label: "Conductivité (réservoir)", dataKey: 'ecReservoir', color: '#a855f7' },
+    { key: 'ecBac', label: "Conductivité (bac)", dataKey: 'ecBac', color: '#7c3aed' },
+    { key: 'phReservoir', label: "pH (réservoir)", dataKey: 'phReservoir', color: '#f472b6' },
+    { key: 'phBac', label: "pH (bac)", dataKey: 'phBac', color: '#f59e42' },
+    { key: 'temperature', label: "Température ambiante", dataKey: 'temperature', color: '#3b82f6' },
     { key: 'humidity', label: "Humidité ambiante", dataKey: 'humidity', color: '#a855f7' },
   ];
 
@@ -99,8 +106,12 @@ function App() {
           phosphorus: 50 + Math.random() * 30,
           potassium: 150 + Math.random() * 50
         },
-        ph: 5.5 + Math.random() * 2,
-        ec: 1.2 + Math.random() * 0.6 // Conductivité électrique en mS/cm
+        phReservoir: 5.5 + Math.random() * 2,
+        phBac: 5.5 + Math.random() * 2,
+        ecReservoir: 1.2 + Math.random() * 0.6,
+        ecBac: 1.2 + Math.random() * 0.6,
+        oxygenReservoir: 80 + Math.random() * 10, // % saturation
+        oxygenBac: 80 + Math.random() * 10
       });
     }
     return data;
@@ -259,97 +270,192 @@ function App() {
       </nav>
       <main className="container mx-auto py-8 px-6">
         {activeTab === 'Accueil' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Oxygène dissous */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
-              <h2 className="text-base font-semibold text-blue-900 mb-1">Oxygène dissous</h2>
-              <span className="text-3xl font-extrabold text-blue-600 mb-1">{latestData ? latestData.humidity.toFixed(1) + ' %' : '--'}</span>
-              <span className="text-xs text-blue-400">Dernière mesure</span>
-            </div>
-            {/* Conductivité */}
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow p-6 flex flex-col items-center border border-purple-200 hover:shadow-lg transition">
-              <h2 className="text-base font-semibold text-purple-900 mb-1">Conductivité</h2>
-              <span className="text-3xl font-extrabold text-purple-600 mb-1">{latestData ? latestData.ec.toFixed(2) + ' mS/cm' : '--'}</span>
-              <span className="text-xs text-purple-400">Dernière mesure</span>
-            </div>
-            {/* Température ambiante du réservoir d'eau */}
-            <div className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow p-6 flex flex-col items-center border border-sky-200 hover:shadow-lg transition">
-              <h2 className="text-base font-semibold text-sky-900 mb-1">Température ambiante du réservoir</h2>
-              <span className="text-3xl font-extrabold text-sky-600 mb-1">{latestData ? latestData.temperature.toFixed(1) + ' °C' : '--'}</span>
-              <span className="text-xs text-sky-400">Dernière mesure</span>
-            </div>
-            {/* pH du réservoir */}
-            <div className="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow p-6 flex flex-col items-center border border-fuchsia-200 hover:shadow-lg transition">
-              <h2 className="text-base font-semibold text-fuchsia-900 mb-1">pH du réservoir</h2>
-              <span className="text-3xl font-extrabold text-fuchsia-600 mb-1">{latestData ? latestData.ph.toFixed(2) : '--'}</span>
-              <span className="text-xs text-fuchsia-400">Dernière mesure</span>
-            </div>
-            {/* Humidité ambiante du système */}
-            <div className="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow p-6 flex flex-col items-center border border-violet-200 hover:shadow-lg transition">
-              <h2 className="text-base font-semibold text-violet-900 mb-1">Humidité ambiante</h2>
-              <span className="text-3xl font-extrabold text-violet-600 mb-1">{latestData ? latestData.humidity.toFixed(1) + ' %' : '--'}</span>
-              <span className="text-xs text-violet-400">Dernière mesure</span>
-            </div>
-            {/* Niveau d'eau du réservoir */}
-            <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow p-6 flex flex-col items-center border border-cyan-200 hover:shadow-lg transition">
-              <h2 className="text-base font-semibold text-cyan-900 mb-1">Niveau d'eau du réservoir</h2>
-              <WaterLevel level={waterLevel.level} />
-            </div>
-            {/* Niveau d'eau du bac du système */}
-            <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow p-6 flex flex-col items-center border border-rose-200 hover:shadow-lg transition">
-              <h2 className="text-base font-semibold text-rose-900 mb-1">Niveau d'eau du bac du système</h2>
-              <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
-              {waterLevel.level - 55 < 20 && (
-                <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                  Niveau critique! Remplissez le réservoir dès que possible.
+          <div className="flex flex-col gap-8">
+            {/* Groupe Ambiance */}
+            <div>
+              <h2 className="text-lg font-bold text-gray-700 mb-3">Ambiance</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Température ambiante */}
+                <div className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow p-6 flex flex-col items-center border border-sky-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-sky-900 mb-1">Température ambiante</h3>
+                  <span className="text-3xl font-extrabold text-sky-600 mb-1">{latestData ? latestData.temperature.toFixed(1) + ' °C' : '--'}</span>
+                  <span className="text-xs text-sky-400">Dernière mesure</span>
                 </div>
-              )}
+                {/* Humidité ambiante */}
+                <div className="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow p-6 flex flex-col items-center border border-violet-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-violet-900 mb-1">Humidité ambiante</h3>
+                  <span className="text-3xl font-extrabold text-violet-600 mb-1">{latestData ? latestData.humidity.toFixed(1) + ' %' : '--'}</span>
+                  <span className="text-xs text-violet-400">Dernière mesure</span>
+                </div>
+              </div>
+            </div>
+            {/* Groupe Réservoir */}
+            <div>
+              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">Réservoir</h2>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Conductivité réservoir */}
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow p-6 flex flex-col items-center border border-purple-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-purple-900 mb-1">Conductivité</h3>
+                  <span className="text-3xl font-extrabold text-purple-600 mb-1">{latestData ? latestData.ecReservoir.toFixed(2) + ' mS/cm' : '--'}</span>
+                  <span className="text-xs text-purple-400">Dernière mesure</span>
+                </div>
+                {/* pH réservoir */}
+                <div className="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow p-6 flex flex-col items-center border border-fuchsia-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-fuchsia-900 mb-1">pH</h3>
+                  <span className="text-3xl font-extrabold text-fuchsia-600 mb-1">{latestData ? latestData.phReservoir.toFixed(2) : '--'}</span>
+                  <span className="text-xs text-fuchsia-400">Dernière mesure</span>
+                </div>
+                {/* Oxygène réservoir */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-blue-900 mb-1">Oxygène dissous</h3>
+                  <span className="text-3xl font-extrabold text-blue-600 mb-1">{latestData ? latestData.oxygenReservoir.toFixed(1) + ' %' : '--'}</span>
+                  <span className="text-xs text-blue-400">Dernière mesure</span>
+                </div>
+                {/* Niveau d'eau du réservoir */}
+                <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow p-6 flex flex-col items-center border border-cyan-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-cyan-900 mb-1">Niveau d'eau</h3>
+                  <WaterLevel level={waterLevel.level} />
+                </div>
+              </div>
+            </div>
+            {/* Groupe Bac du système */}
+            <div>
+              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">Bac du système</h2>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Conductivité bac */}
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow p-6 flex flex-col items-center border border-purple-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-purple-900 mb-1">Conductivité</h3>
+                  <span className="text-3xl font-extrabold text-purple-600 mb-1">{latestData ? latestData.ecBac.toFixed(2) + ' mS/cm' : '--'}</span>
+                  <span className="text-xs text-purple-400">Dernière mesure</span>
+                </div>
+                {/* pH bac */}
+                <div className="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow p-6 flex flex-col items-center border border-fuchsia-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-fuchsia-900 mb-1">pH</h3>
+                  <span className="text-3xl font-extrabold text-fuchsia-600 mb-1">{latestData ? latestData.phBac.toFixed(2) : '--'}</span>
+                  <span className="text-xs text-fuchsia-400">Dernière mesure</span>
+                </div>
+                {/* Oxygène bac */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-blue-900 mb-1">Oxygène dissous</h3>
+                  <span className="text-3xl font-extrabold text-blue-600 mb-1">{latestData ? latestData.oxygenBac.toFixed(1) + ' %' : '--'}</span>
+                  <span className="text-xs text-blue-400">Dernière mesure</span>
+                </div>
+                {/* Niveau d'eau du bac du système */}
+                <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow p-6 flex flex-col items-center border border-rose-200 hover:shadow-lg transition">
+                  <h3 className="text-base font-semibold text-rose-900 mb-1">Niveau d'eau</h3>
+                  <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
+                  {waterLevel.level - 55 < 20 && (
+                    <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+                      Niveau critique! Remplissez le réservoir dès que possible.
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         ) : activeTab === 'Graphiques' ? (
-          <div>
-            {/* Barre de sélection en haut */}
-            <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between border border-gray-300">
-              <div className="flex items-center gap-2 mb-2 md:mb-0">
-                {[3, 6, 12, 24].map((hours) => (
-                  <button
-                    key={hours}
-                    className={`px-3 py-1 border border-gray-400 rounded bg-gray-100 font-semibold ${selectedHours === hours ? 'bg-green-500 text-white' : ''}`}
-                    onClick={() => handleHoursChange(hours)}
-                  >
-                    {hours} heures
-                  </button>
-                ))}
+          <div className="flex flex-col gap-10">
+            {/* Section Ambiance */}
+            <div>
+              <h2 className="text-lg font-bold text-gray-700 mb-3">Ambiance</h2>
+              <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between border border-gray-300">
+                <div className="flex items-center gap-2 mb-2 md:mb-0">
+                  {[3, 6, 12, 24].map((hours) => (
+                    <button
+                      key={hours}
+                      className={`px-3 py-1 border border-gray-400 rounded bg-gray-100 font-semibold ${selectedHours === hours ? 'bg-green-500 text-white' : ''}`}
+                      onClick={() => handleHoursChange(hours)}
+                    >
+                      {hours} heures
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="mr-2 text-gray-700">Sélection des graphiques</span>
+                  <input type="checkbox" className="toggle toggle-sm" checked={selectCharts} onChange={() => setSelectCharts(v => !v)} />
+                  <button className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100 disabled:opacity-50" disabled={!selectCharts || selectedCharts.length === 0} onClick={handleExportCSV}>Exporter en CSV</button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="mr-2 text-gray-700">Sélection des graphiques</span>
-                <input type="checkbox" className="toggle toggle-sm" checked={selectCharts} onChange={() => setSelectCharts(v => !v)} />
-                <button className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100 disabled:opacity-50" disabled={!selectCharts || selectedCharts.length === 0} onClick={handleExportCSV}>Exporter en CSV</button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {['temperature', 'humidity'].map(key => {
+                  const chart = chartList.find(c => c.key === key)!;
+                  const chartData = getChartData(chart.dataKey as any, chart.label, chart.color);
+                  return (
+                    <div key={chart.key} className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative">
+                      {selectCharts && (
+                        <input
+                          type="checkbox"
+                          className="absolute top-2 right-2 w-5 h-5"
+                          checked={selectedCharts.includes(chart.key)}
+                          onChange={() => handleChartSelect(chart.key)}
+                        />
+                      )}
+                      <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
+                      {chartData ? (
+                        <Line data={chartData} options={chartOptions} />
+                      ) : (
+                        <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            {/* Grille des graphiques avec sélection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {chartList.map(chart => {
-                const chartData = getChartData(chart.dataKey as any, chart.label, chart.color);
-                return (
-                  <div key={chart.key} className={`bg-white rounded-lg shadow-md p-4 border border-gray-300 relative`}>
-                    {selectCharts && (
-                      <input
-                        type="checkbox"
-                        className="absolute top-2 right-2 w-5 h-5"
-                        checked={selectedCharts.includes(chart.key)}
-                        onChange={() => handleChartSelect(chart.key)}
-                      />
-                    )}
-                    <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
-                    {chartData ? (
-                      <Line data={chartData} options={chartOptions} />
-                    ) : (
-                      <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
-                    )}
-                  </div>
-                );
-              })}
+            {/* Section Réservoir */}
+            <div>
+              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">Réservoir</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {['phReservoir', 'oxygenReservoir', 'ecReservoir'].map(key => {
+                  const chart = chartList.find(c => c.key === key)!;
+                  const chartData = getChartData(chart.dataKey as any, chart.label, chart.color);
+                  return (
+                    <div key={chart.key} className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative">
+                      {selectCharts && (
+                        <input
+                          type="checkbox"
+                          className="absolute top-2 right-2 w-5 h-5"
+                          checked={selectedCharts.includes(chart.key)}
+                          onChange={() => handleChartSelect(chart.key)}
+                        />
+                      )}
+                      <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
+                      {chartData ? (
+                        <Line data={chartData} options={chartOptions} />
+                      ) : (
+                        <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Section Bac du système */}
+            <div>
+              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">Bac du système</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {['phBac', 'oxygenBac', 'ecBac'].map(key => {
+                  const chart = chartList.find(c => c.key === key)!;
+                  const chartData = getChartData(chart.dataKey as any, chart.label, chart.color);
+                  return (
+                    <div key={chart.key} className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative">
+                      {selectCharts && (
+                        <input
+                          type="checkbox"
+                          className="absolute top-2 right-2 w-5 h-5"
+                          checked={selectedCharts.includes(chart.key)}
+                          onChange={() => handleChartSelect(chart.key)}
+                        />
+                      )}
+                      <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
+                      {chartData ? (
+                        <Line data={chartData} options={chartOptions} />
+                      ) : (
+                        <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         ) : activeTab === 'Commandes' ? (
@@ -374,12 +480,12 @@ function App() {
                 </div>
               </div>
             </div>
-            {/* Bloc graphique Conductivité */}
+            {/* Bloc graphique Conductivité (réservoir) */}
             <div className="bg-white rounded-xl shadow p-8 flex flex-col border border-gray-300 min-h-[340px]">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Évolution de la conductivité</h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Évolution de la conductivité (réservoir)</h2>
               <div className="flex-1 min-h-[220px]">
-                {getChartData('ec', 'Conductivité', '#a855f7') ? (
-                  <Line data={getChartData('ec', 'Conductivité', '#a855f7')!} options={chartOptions} />
+                {getChartData('ecReservoir', 'Conductivité (réservoir)', '#a855f7') ? (
+                  <Line data={getChartData('ecReservoir', 'Conductivité (réservoir)', '#a855f7')!} options={chartOptions} />
                 ) : (
                   <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
                 )}
