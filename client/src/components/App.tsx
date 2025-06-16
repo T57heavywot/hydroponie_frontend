@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import annotationPlugin from 'chartjs-plugin-annotation';
 import './App.css';
 import WaterLevel from './WaterLevel';
 import SystemHistoryChart from './SystemHistoryChart';
@@ -21,7 +22,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin
 );
 
 interface SensorData {
@@ -54,6 +56,18 @@ function App() {
   const [activeTab, setActiveTab] = useState<string>('Accueil');
   const [selectCharts, setSelectCharts] = useState(false);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
+
+  // Bornes par défaut (modifiable facilement)
+  const BORNES = {
+    phReservoir: { min: 5.5, max: 6.5 },
+    phBac: { min: 5.5, max: 6.5 },
+    ecReservoir: { min: 1.2, max: 2.0 },
+    ecBac: { min: 1.2, max: 2.0 },
+    oxygenReservoir: { min: 80, max: 100 },
+    oxygenBac: { min: 80, max: 100 },
+    temperature: { min: 18, max: 26 },
+    humidity: { min: 40, max: 70 },
+  };
 
   // Liste des graphiques disponibles
   const chartList = [
@@ -244,6 +258,56 @@ function App() {
   // Récupérer la dernière valeur pour chaque catégorie
   const latestData = sensorData.length > 0 ? sensorData[sensorData.length - 1] : null;
 
+  // Ajout d'une zone de bornes sur les graphiques si applicable
+  const getChartOptionsWithBounds = (dataKey: keyof typeof BORNES, label: string, color: string) => {
+    const bounds = BORNES[dataKey];
+    return {
+      ...chartOptions,
+      plugins: {
+        ...chartOptions.plugins,
+        annotation: bounds ? {
+          annotations: {
+            zone: {
+              type: 'box' as const,
+              yMin: bounds.min,
+              yMax: bounds.max,
+              backgroundColor: 'rgba(34,197,94,0.10)', // vert pâle
+              borderWidth: 0,
+            },
+            minLine: {
+              type: 'line' as const,
+              yMin: bounds.min,
+              yMax: bounds.min,
+              borderColor: '#22c55e',
+              borderWidth: 2,
+              borderDash: [6, 6],
+              label: {
+                display: true,
+                content: 'Min',
+                position: 'start' as const,
+                color: '#22c55e',
+              },
+            },
+            maxLine: {
+              type: 'line' as const,
+              yMin: bounds.max,
+              yMax: bounds.max,
+              borderColor: '#22c55e',
+              borderWidth: 2,
+              borderDash: [6, 6],
+              label: {
+                display: true,
+                content: 'Max',
+                position: 'end' as const,
+                color: '#22c55e',
+              },
+            },
+          },
+        } : undefined,
+      },
+    };
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -392,7 +456,7 @@ function App() {
                       )}
                       <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
                       {chartData ? (
-                        <Line data={chartData} options={chartOptions} />
+                        <Line data={chartData} options={getChartOptionsWithBounds(chart.dataKey as any, chart.label, chart.color)} />
                       ) : (
                         <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
                       )}
@@ -420,7 +484,7 @@ function App() {
                       )}
                       <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
                       {chartData ? (
-                        <Line data={chartData} options={chartOptions} />
+                        <Line data={chartData} options={getChartOptionsWithBounds(chart.dataKey as any, chart.label, chart.color)} />
                       ) : (
                         <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
                       )}
@@ -448,7 +512,7 @@ function App() {
                       )}
                       <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
                       {chartData ? (
-                        <Line data={chartData} options={chartOptions} />
+                        <Line data={chartData} options={getChartOptionsWithBounds(chart.dataKey as any, chart.label, chart.color)} />
                       ) : (
                         <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
                       )}
