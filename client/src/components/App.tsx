@@ -43,6 +43,8 @@ interface SensorData {
   ecBac: number;
   oxygenReservoir: number;
   oxygenBac: number;
+  waterLevelReservoir: number;
+  waterLevelBac: number;
 }
 
 interface WaterLevel {
@@ -68,6 +70,8 @@ function App() {
     oxygenBac: { min: 80, max: 100 },
     temperature: { min: 18, max: 26 },
     humidity: { min: 40, max: 70 },
+    waterLevelReservoir: { min: 20, max: 100 }, // bornes fictives
+    waterLevelBac: { min: 10, max: 45 }, // bornes fictives
   };
 
   // Liste des graphiques disponibles
@@ -80,6 +84,8 @@ function App() {
     { key: 'phBac', label: "pH (bac)", dataKey: 'phBac', color: '#f59e42' },
     { key: 'temperature', label: "Température ambiante", dataKey: 'temperature', color: '#3b82f6' },
     { key: 'humidity', label: "Humidité ambiante", dataKey: 'humidity', color: '#a855f7' },
+    { key: 'waterLevelReservoir', label: "Niveau d'eau du réservoir", dataKey: 'waterLevelReservoir', color: '#06b6d4' },
+    { key: 'waterLevelBac', label: "Niveau d'eau du bac du système", dataKey: 'waterLevelBac', color: '#f43f5e' },
   ];
 
   useEffect(() => {
@@ -126,7 +132,9 @@ function App() {
         ecReservoir: 1.2 + Math.random() * 0.6,
         ecBac: 1.2 + Math.random() * 0.6,
         oxygenReservoir: 80 + Math.random() * 10, // % saturation
-        oxygenBac: 80 + Math.random() * 10
+        oxygenBac: 80 + Math.random() * 10,
+        waterLevelReservoir: 40 + Math.random() * 60, // 0-100
+        waterLevelBac: Math.max(0, 40 + Math.random() * 60 - 55), // 0-100, décalé pour le bac
       });
     }
     return data;
@@ -345,12 +353,34 @@ function App() {
                   <h3 className="text-base font-semibold text-sky-900 mb-1">Température ambiante</h3>
                   <span className="text-3xl font-extrabold text-sky-600 mb-1">{latestData ? latestData.temperature.toFixed(1) + ' °C' : '--'}</span>
                   <span className="text-xs text-sky-400">Dernière mesure</span>
+                  {latestData && (
+                    <GaugeBar
+                      min={0}
+                      max={40}
+                      value={latestData.temperature}
+                      optimalMin={BORNES.temperature.min}
+                      optimalMax={BORNES.temperature.max}
+                      unit="°C"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">Intervalle recommandé : {BORNES.temperature.min} - {BORNES.temperature.max} °C</span>
                 </div>
                 {/* Humidité ambiante */}
                 <div className="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow p-6 flex flex-col items-center border border-violet-200 hover:shadow-lg transition">
                   <h3 className="text-base font-semibold text-violet-900 mb-1">Humidité ambiante</h3>
                   <span className="text-3xl font-extrabold text-violet-600 mb-1">{latestData ? latestData.humidity.toFixed(1) + ' %' : '--'}</span>
                   <span className="text-xs text-violet-400">Dernière mesure</span>
+                  {latestData && (
+                    <GaugeBar
+                      min={0}
+                      max={100}
+                      value={latestData.humidity}
+                      optimalMin={BORNES.humidity.min}
+                      optimalMax={BORNES.humidity.max}
+                      unit="%"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">Intervalle recommandé : {BORNES.humidity.min} - {BORNES.humidity.max} %</span>
                 </div>
               </div>
             </div>
@@ -363,6 +393,17 @@ function App() {
                   <h3 className="text-base font-semibold text-purple-900 mb-1">Conductivité</h3>
                   <span className="text-3xl font-extrabold text-purple-600 mb-1">{latestData ? latestData.ecReservoir.toFixed(2) + ' mS/cm' : '--'}</span>
                   <span className="text-xs text-purple-400">Dernière mesure</span>
+                  {latestData && (
+                    <GaugeBar
+                      min={0}
+                      max={3}
+                      value={latestData.ecReservoir}
+                      optimalMin={BORNES.ecReservoir.min}
+                      optimalMax={BORNES.ecReservoir.max}
+                      unit="mS/cm"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">Intervalle recommandé : {BORNES.ecReservoir.min} - {BORNES.ecReservoir.max} mS/cm</span>
                 </div>
                 {/* pH réservoir */}
                 <div className="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow p-6 flex flex-col items-center border border-fuchsia-200 hover:shadow-lg transition">
@@ -386,6 +427,17 @@ function App() {
                   <h3 className="text-base font-semibold text-blue-900 mb-1">Oxygène dissous</h3>
                   <span className="text-3xl font-extrabold text-blue-600 mb-1">{latestData ? latestData.oxygenReservoir.toFixed(1) + ' %' : '--'}</span>
                   <span className="text-xs text-blue-400">Dernière mesure</span>
+                  {latestData && (
+                    <GaugeBar
+                      min={0}
+                      max={100}
+                      value={latestData.oxygenReservoir}
+                      optimalMin={BORNES.oxygenReservoir.min}
+                      optimalMax={BORNES.oxygenReservoir.max}
+                      unit="%"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">Intervalle recommandé : {BORNES.oxygenReservoir.min} - {BORNES.oxygenReservoir.max} %</span>
                 </div>
                 {/* Niveau d'eau du réservoir */}
                 <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow p-6 flex flex-col items-center border border-cyan-200 hover:shadow-lg transition">
@@ -403,6 +455,17 @@ function App() {
                   <h3 className="text-base font-semibold text-purple-900 mb-1">Conductivité</h3>
                   <span className="text-3xl font-extrabold text-purple-600 mb-1">{latestData ? latestData.ecBac.toFixed(2) + ' mS/cm' : '--'}</span>
                   <span className="text-xs text-purple-400">Dernière mesure</span>
+                  {latestData && (
+                    <GaugeBar
+                      min={0}
+                      max={3}
+                      value={latestData.ecBac}
+                      optimalMin={BORNES.ecBac.min}
+                      optimalMax={BORNES.ecBac.max}
+                      unit="mS/cm"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">Intervalle recommandé : {BORNES.ecBac.min} - {BORNES.ecBac.max} mS/cm</span>
                 </div>
                 {/* pH bac */}
                 <div className="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow p-6 flex flex-col items-center border border-fuchsia-200 hover:shadow-lg transition">
@@ -426,6 +489,17 @@ function App() {
                   <h3 className="text-base font-semibold text-blue-900 mb-1">Oxygène dissous</h3>
                   <span className="text-3xl font-extrabold text-blue-600 mb-1">{latestData ? latestData.oxygenBac.toFixed(1) + ' %' : '--'}</span>
                   <span className="text-xs text-blue-400">Dernière mesure</span>
+                  {latestData && (
+                    <GaugeBar
+                      min={0}
+                      max={100}
+                      value={latestData.oxygenBac}
+                      optimalMin={BORNES.oxygenBac.min}
+                      optimalMax={BORNES.oxygenBac.max}
+                      unit="%"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">Intervalle recommandé : {BORNES.oxygenBac.min} - {BORNES.oxygenBac.max} %</span>
                 </div>
                 {/* Niveau d'eau du bac du système */}
                 <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow p-6 flex flex-col items-center border border-rose-200 hover:shadow-lg transition">
@@ -542,6 +616,58 @@ function App() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+            {/* Section Niveau d'eau (après Bac du système) */}
+            <div>
+              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">Niveau d'eau</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Niveau d'eau du réservoir */}
+                {(() => {
+                  const chart = chartList.find(c => c.key === 'waterLevelReservoir');
+                  const chartData = chart ? getChartData(chart.dataKey as any, chart.label, chart.color) : null;
+                  return chart ? (
+                    <div key={chart.key} className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative">
+                      {selectCharts && (
+                        <input
+                          type="checkbox"
+                          className="absolute top-2 right-2 w-5 h-5"
+                          checked={selectedCharts.includes(chart.key)}
+                          onChange={() => handleChartSelect(chart.key)}
+                        />
+                      )}
+                      <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
+                      {chartData ? (
+                        <Line data={chartData} options={getChartOptionsWithBounds(chart.dataKey as any, chart.label, chart.color)} />
+                      ) : (
+                        <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+                {/* Niveau d'eau du bac du système */}
+                {(() => {
+                  const chart = chartList.find(c => c.key === 'waterLevelBac');
+                  const chartData = chart ? getChartData(chart.dataKey as any, chart.label, chart.color) : null;
+                  return chart ? (
+                    <div key={chart.key} className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative">
+                      {selectCharts && (
+                        <input
+                          type="checkbox"
+                          className="absolute top-2 right-2 w-5 h-5"
+                          checked={selectedCharts.includes(chart.key)}
+                          onChange={() => handleChartSelect(chart.key)}
+                        />
+                      )}
+                      <h2 className="text-base font-semibold text-gray-800 mb-2">Évolution de {chart.label}</h2>
+                      {chartData ? (
+                        <Line data={chartData} options={getChartOptionsWithBounds(chart.dataKey as any, chart.label, chart.color)} />
+                      ) : (
+                        <div className="text-gray-400 text-sm">Aucune donnée à afficher</div>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
           </div>
