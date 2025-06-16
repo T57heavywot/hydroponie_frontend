@@ -14,6 +14,7 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 import './App.css';
 import WaterLevel from './WaterLevel';
 import SystemHistoryChart from './SystemHistoryChart';
+import GaugeBar from './GaugeBar';
 
 ChartJS.register(
   CategoryScale,
@@ -368,6 +369,17 @@ function App() {
                   <h3 className="text-base font-semibold text-fuchsia-900 mb-1">pH</h3>
                   <span className="text-3xl font-extrabold text-fuchsia-600 mb-1">{latestData ? latestData.phReservoir.toFixed(2) : '--'}</span>
                   <span className="text-xs text-fuchsia-400">Dernière mesure</span>
+                  {latestData && (
+                    <GaugeBar
+                      min={0}
+                      max={14}
+                      value={latestData.phReservoir}
+                      optimalMin={BORNES.phReservoir.min}
+                      optimalMax={BORNES.phReservoir.max}
+                      unit="pH"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">Intervalle recommandé : {BORNES.phReservoir.min} - {BORNES.phReservoir.max}</span>
                 </div>
                 {/* Oxygène réservoir */}
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
@@ -397,6 +409,17 @@ function App() {
                   <h3 className="text-base font-semibold text-fuchsia-900 mb-1">pH</h3>
                   <span className="text-3xl font-extrabold text-fuchsia-600 mb-1">{latestData ? latestData.phBac.toFixed(2) : '--'}</span>
                   <span className="text-xs text-fuchsia-400">Dernière mesure</span>
+                  {latestData && (
+                    <GaugeBar
+                      min={0}
+                      max={14}
+                      value={latestData.phBac}
+                      optimalMin={BORNES.phBac.min}
+                      optimalMax={BORNES.phBac.max}
+                      unit="pH"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">Intervalle recommandé : {BORNES.phBac.min} - {BORNES.phBac.max}</span>
                 </div>
                 {/* Oxygène bac */}
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
