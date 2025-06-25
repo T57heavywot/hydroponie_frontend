@@ -754,9 +754,16 @@ function App() {
             </div>
             {/* Section Réservoir */}
             <div>
-              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">Réservoir</h2>
+              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">
+                Réservoir
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {["phReservoir", "oxygenReservoir", "ecReservoir", "waterLevelReservoir"].map((key) => {
+                {[
+                  "phReservoir",
+                  "oxygenReservoir",
+                  "ecReservoir",
+                  "waterLevelReservoir",
+                ].map((key) => {
                   const chart = chartList.find((c) => c.key === key)!;
                   const chartData = getChartData(
                     chart.dataKey as any,
@@ -800,7 +807,9 @@ function App() {
             </div>
             {/* Section Bac du système */}
             <div>
-              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">Bac du système</h2>
+              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">
+                Bac du système
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {["phBac", "oxygenBac", "ecBac", "waterLevelBac"].map((key) => {
                   const chart = chartList.find((c) => c.key === key)!;
