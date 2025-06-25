@@ -9,11 +9,12 @@ import {
   Title,
   Tooltip,
   Legend,
+  TimeScale, // Ajout du TimeScale
 } from "chart.js";
 import annotationPlugin from "chartjs-plugin-annotation";
+import "chartjs-adapter-date-fns";
 import "./App.css";
 import WaterLevel from "./WaterLevel";
-import SystemHistoryChart from "./SystemHistoryChart";
 import GaugeBar from "./GaugeBar";
 
 ChartJS.register(
@@ -24,7 +25,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  annotationPlugin
+  annotationPlugin,
+  TimeScale // Enregistrement du TimeScale pour l'axe temporel
 );
 
 interface SensorData {
@@ -47,18 +49,22 @@ interface SensorData {
   waterLevelBac: number;
 }
 
-interface WaterLevel {
-  level: number;
-}
-
 function App() {
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
-  const [waterLevel, setWaterLevel] = useState<WaterLevel>({ level: 0 });
+  const [waterLevel, setWaterLevel] = useState({ level: 0 });
   const [selectedHours, setSelectedHours] = useState<number>(6);
-  const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("Accueil");
   const [selectCharts, setSelectCharts] = useState(false);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
+  // Correction : garder uniquement l'état events (setEvents inutilisé)
+  const [events] = useState<
+    {
+      id: string;
+      text: string;
+      time: string;
+      categories: string[];
+    }[]
+  >([]);
 
   // Bornes par défaut (modifiable facilement)
   const BORNES = {
@@ -135,7 +141,6 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
         // Simuler la récupération des données du backend
         const mockSensorData = generateMockData(selectedHours);
@@ -145,8 +150,6 @@ function App() {
         setWaterLevel(mockWaterLevel);
       } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -189,32 +192,50 @@ function App() {
     setSelectedHours(hours);
   };
 
+  // Génère les annotations pour un graphique donné
+  // Correction du typage dans getEventAnnotations
+  function getEventAnnotations(category: string) {
+    const filtered = events.filter((ev: any) =>
+      ev.categories.includes(category)
+    );
+    const annotationsObj: Record<string, any> = {};
+    filtered.forEach((ev: any, idx: number) => {
+      annotationsObj[`event${idx}`] = {
+        type: "line",
+        xMin: new Date(ev.time),
+        xMax: new Date(ev.time),
+        borderColor: "#f59e42",
+        borderWidth: 2,
+        label: {
+          content: ev.text,
+          enabled: true,
+          position: "start",
+          backgroundColor: "#f59e42",
+          color: "#fff",
+          font: { weight: "bold" },
+          rotation: -90,
+        },
+      };
+    });
+    return annotationsObj;
+  }
+
   // Préparer les données pour les graphiques
+  // Adapter getChartData pour axe X temporel
   const getChartData = (
     dataKey: keyof SensorData,
     label: string,
     color: string
   ) => {
     if (!sensorData.length) return null;
-
-    const labels = sensorData.map((data) => {
-      const date = new Date(data.timestamp);
-      return (
-        date.getHours() +
-        ":" +
-        (date.getMinutes() < 10 ? "0" : "") +
-        date.getMinutes()
-      );
-    });
-
     return {
-      labels,
       datasets: [
         {
           label,
-          data: sensorData.map((data) => {
-            return typeof data[dataKey] === "object" ? null : data[dataKey];
-          }),
+          data: sensorData.map((data) => ({
+            x: new Date(data.timestamp),
+            y: typeof data[dataKey] === "object" ? null : data[dataKey],
+          })),
           borderColor: color,
           backgroundColor: color + "20",
           tension: 0.4,
@@ -236,47 +257,6 @@ function App() {
         beginAtZero: false,
       },
     },
-  };
-
-  const getNutrientsChartData = () => {
-    if (!sensorData.length) return null;
-
-    const labels = sensorData.map((data) => {
-      const date = new Date(data.timestamp);
-      return (
-        date.getHours() +
-        ":" +
-        (date.getMinutes() < 10 ? "0" : "") +
-        date.getMinutes()
-      );
-    });
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: "Azote (N)",
-          data: sensorData.map((data) => data.nutrients.nitrogen),
-          borderColor: "#4ade80",
-          backgroundColor: "#4ade8020",
-          tension: 0.4,
-        },
-        {
-          label: "Phosphore (P)",
-          data: sensorData.map((data) => data.nutrients.phosphorus),
-          borderColor: "#3b82f6",
-          backgroundColor: "#3b82f620",
-          tension: 0.4,
-        },
-        {
-          label: "Potassium (K)",
-          data: sensorData.map((data) => data.nutrients.potassium),
-          borderColor: "#a855f7",
-          backgroundColor: "#a855f720",
-          tension: 0.4,
-        },
-      ],
-    };
   };
 
   // Gestion de la sélection des graphiques
@@ -338,54 +318,73 @@ function App() {
   const getChartOptionsWithBounds = (
     dataKey: keyof typeof BORNES,
     label: string,
-    color: string
+    color: string,
+    category?: string
   ) => {
     const bounds = BORNES[dataKey];
+    const eventAnnotations = getEventAnnotations(category || "");
+    const annotations: Record<string, any> = { ...eventAnnotations };
+    if (bounds) {
+      annotations.zone = {
+        type: "box",
+        yMin: bounds.min,
+        yMax: bounds.max,
+        backgroundColor: "rgba(34,197,94,0.10)",
+        borderWidth: 0,
+      };
+      annotations.minLine = {
+        type: "line",
+        yMin: bounds.min,
+        yMax: bounds.min,
+        borderColor: "#22c55e",
+        borderWidth: 2,
+        borderDash: [6, 6],
+        label: {
+          display: true,
+          content: "Min",
+          position: "start",
+          color: "#22c55e",
+        },
+      };
+      annotations.maxLine = {
+        type: "line",
+        yMin: bounds.max,
+        yMax: bounds.max,
+        borderColor: "#22c55e",
+        borderWidth: 2,
+        borderDash: [6, 6],
+        label: {
+          display: true,
+          content: "Max",
+          position: "end",
+          color: "#22c55e",
+        },
+      };
+    }
     return {
       ...chartOptions,
       plugins: {
         ...chartOptions.plugins,
-        annotation: bounds
-          ? {
-              annotations: {
-                zone: {
-                  type: "box" as const,
-                  yMin: bounds.min,
-                  yMax: bounds.max,
-                  backgroundColor: "rgba(34,197,94,0.10)", // vert pâle
-                  borderWidth: 0,
-                },
-                minLine: {
-                  type: "line" as const,
-                  yMin: bounds.min,
-                  yMax: bounds.min,
-                  borderColor: "#22c55e",
-                  borderWidth: 2,
-                  borderDash: [6, 6],
-                  label: {
-                    display: true,
-                    content: "Min",
-                    position: "start" as const,
-                    color: "#22c55e",
-                  },
-                },
-                maxLine: {
-                  type: "line" as const,
-                  yMin: bounds.max,
-                  yMax: bounds.max,
-                  borderColor: "#22c55e",
-                  borderWidth: 2,
-                  borderDash: [6, 6],
-                  label: {
-                    display: true,
-                    content: "Max",
-                    position: "end" as const,
-                    color: "#22c55e",
-                  },
-                },
-              },
-            }
-          : undefined,
+        annotation: {
+          annotations,
+        },
+      },
+      scales: {
+        x: {
+          type: "time" as const, // forcer le littéral
+          time: {
+            unit: "hour" as const, // forcer le littéral accepté par Chart.js
+            displayFormats: {
+              hour: "HH:mm",
+              minute: "HH:mm",
+            },
+          },
+          title: {
+            display: true,
+            text: "Heure",
+          },
+        },
+        y: chartOptions.scales.y,
       },
     };
   };
