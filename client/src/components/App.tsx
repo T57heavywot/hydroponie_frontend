@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -16,6 +16,7 @@ import "chartjs-adapter-date-fns";
 import "./App.css";
 import WaterLevel from "./WaterLevel";
 import GaugeBar from "./GaugeBar";
+import EventBadgeOverlay from "./EventBadgeOverlay";
 
 ChartJS.register(
   CategoryScale,
@@ -141,6 +142,9 @@ function App() {
       color: "#f43f5e",
     },
   ];
+
+  const chartRefs = useRef<Record<string, any>>({});
+  const [chartInstances, setChartInstances] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -817,19 +821,37 @@ function App() {
                       <h2 className="text-base font-semibold text-gray-800 mb-2">
                         Évolution de {chart.label}
                       </h2>
-                      {chartData ? (
-                        <Line
-                          data={chartData}
-                          options={getChartOptionsWithBounds(
-                            chart.dataKey as any,
-                            chart.label,
-                            chart.color,
-                            chart.key // Correction ici : passer la catégorie
+                      {chartData && (
+                        <div style={{ position: "relative" }}>
+                          <Line
+                            ref={(el) => {
+                              if (el) chartRefs.current[chart.key] = el;
+                            }}
+                            data={chartData}
+                            options={getChartOptionsWithBounds(
+                              chart.dataKey as any,
+                              chart.label,
+                              chart.color,
+                              chart.key
+                            )}
+                            redraw={false}
+                          />
+                          {chartRefs.current[chart.key]?.scales?.x && (
+                            <EventBadgeOverlay
+                              events={events
+                                .filter((ev) =>
+                                  ev.categories.includes(chart.key)
+                                )
+                                .map((ev) => ({
+                                  time: ev.time,
+                                  text: ev.text,
+                                }))}
+                              chartRef={{
+                                current: chartRefs.current[chart.key].canvas,
+                              }}
+                              xScale={chartRefs.current[chart.key].scales.x}
+                            />
                           )}
-                        />
-                      ) : (
-                        <div className="text-gray-400 text-sm">
-                          Aucune donnée à afficher
                         </div>
                       )}
                     </div>
@@ -871,19 +893,37 @@ function App() {
                       <h2 className="text-base font-semibold text-gray-800 mb-2">
                         Évolution de {chart.label}
                       </h2>
-                      {chartData ? (
-                        <Line
-                          data={chartData}
-                          options={getChartOptionsWithBounds(
-                            chart.dataKey as any,
-                            chart.label,
-                            chart.color,
-                            chart.key // Correction ici aussi
+                      {chartData && (
+                        <div style={{ position: "relative" }}>
+                          <Line
+                            ref={(el) => {
+                              if (el) chartRefs.current[chart.key] = el;
+                            }}
+                            data={chartData}
+                            options={getChartOptionsWithBounds(
+                              chart.dataKey as any,
+                              chart.label,
+                              chart.color,
+                              chart.key
+                            )}
+                            redraw={false}
+                          />
+                          {chartRefs.current[chart.key]?.scales?.x && (
+                            <EventBadgeOverlay
+                              events={events
+                                .filter((ev) =>
+                                  ev.categories.includes(chart.key)
+                                )
+                                .map((ev) => ({
+                                  time: ev.time,
+                                  text: ev.text,
+                                }))}
+                              chartRef={{
+                                current: chartRefs.current[chart.key].canvas,
+                              }}
+                              xScale={chartRefs.current[chart.key].scales.x}
+                            />
                           )}
-                        />
-                      ) : (
-                        <div className="text-gray-400 text-sm">
-                          Aucune donnée à afficher
                         </div>
                       )}
                     </div>
@@ -905,37 +945,55 @@ function App() {
                     chart.color
                   );
                   return (
-                    <div
-                      key={chart.key}
-                      className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative"
-                    >
-                      {selectCharts && (
-                        <input
-                          type="checkbox"
-                          className="absolute top-2 right-2 w-5 h-5"
-                          checked={selectedCharts.includes(chart.key)}
-                          onChange={() => handleChartSelect(chart.key)}
-                        />
-                      )}
-                      <h2 className="text-base font-semibold text-gray-800 mb-2">
-                        Évolution de {chart.label}
-                      </h2>
-                      {chartData ? (
-                        <Line
-                          data={chartData}
-                          options={getChartOptionsWithBounds(
-                            chart.dataKey as any,
-                            chart.label,
-                            chart.color,
-                            chart.key // Correction ici aussi
+                    chartData && (
+                      <div
+                        key={chart.key}
+                        className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative"
+                      >
+                        {selectCharts && (
+                          <input
+                            type="checkbox"
+                            className="absolute top-2 right-2 w-5 h-5"
+                            checked={selectedCharts.includes(chart.key)}
+                            onChange={() => handleChartSelect(chart.key)}
+                          />
+                        )}
+                        <h2 className="text-base font-semibold text-gray-800 mb-2">
+                          Évolution de {chart.label}
+                        </h2>
+                        <div style={{ position: "relative" }}>
+                          <Line
+                            ref={(el) => {
+                              if (el) chartRefs.current[chart.key] = el;
+                            }}
+                            data={chartData}
+                            options={getChartOptionsWithBounds(
+                              chart.dataKey as any,
+                              chart.label,
+                              chart.color,
+                              chart.key
+                            )}
+                            redraw={false}
+                          />
+                          {chartRefs.current[chart.key]?.scales?.x && (
+                            <EventBadgeOverlay
+                              events={events
+                                .filter((ev) =>
+                                  ev.categories.includes(chart.key)
+                                )
+                                .map((ev) => ({
+                                  time: ev.time,
+                                  text: ev.text,
+                                }))}
+                              chartRef={{
+                                current: chartRefs.current[chart.key].canvas,
+                              }}
+                              xScale={chartRefs.current[chart.key].scales.x}
+                            />
                           )}
-                        />
-                      ) : (
-                        <div className="text-gray-400 text-sm">
-                          Aucune donnée à afficher
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )
                   );
                 })}
               </div>
