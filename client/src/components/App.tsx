@@ -56,8 +56,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<string>("Accueil");
   const [selectCharts, setSelectCharts] = useState(false);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
-  // Correction : garder uniquement l'état events (setEvents inutilisé)
-  const [events] = useState<
+  const [events, setEvents] = useState<
     {
       id: string;
       text: string;
@@ -65,6 +64,10 @@ function App() {
       categories: string[];
     }[]
   >([]);
+  // Nouveaux états pour le formulaire d'ajout d'événement
+  const [eventText, setEventText] = useState("");
+  const [eventTime, setEventTime] = useState("");
+  const [eventCategories, setEventCategories] = useState<string[]>([]);
 
   // Bornes par défaut (modifiable facilement)
   const BORNES = {
@@ -207,13 +210,14 @@ function App() {
         borderColor: "#f59e42",
         borderWidth: 2,
         label: {
-          content: ev.text,
+          display: false, // n'affiche pas en permanence
+          content: ev.text, // texte complet
           enabled: true,
           position: "start",
           backgroundColor: "#f59e42",
           color: "#fff",
-          font: { weight: "bold" },
-          rotation: -90,
+          font: { weight: "bold", size: 12 },
+          callout: true, // info-bulle au survol (chartjs-plugin-annotation >= 3.0.0)
         },
       };
     });
@@ -387,6 +391,24 @@ function App() {
         y: chartOptions.scales.y,
       },
     };
+  };
+
+  // Ajout d'un événement
+  const handleAddEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventText || !eventTime || eventCategories.length === 0) return;
+    setEvents((prev) => [
+      ...prev,
+      {
+        id: Math.random().toString(36).slice(2),
+        text: eventText,
+        time: eventTime,
+        categories: eventCategories,
+      },
+    ]);
+    setEventText("");
+    setEventTime("");
+    setEventCategories([]);
   };
 
   return (
@@ -672,6 +694,69 @@ function App() {
           </div>
         ) : activeTab === "Graphiques" ? (
           <div className="flex flex-col gap-10">
+            {/* Formulaire d'ajout d'événement */}
+            <form
+              onSubmit={handleAddEvent}
+              className="mb-6 bg-white rounded-lg shadow p-4 border border-gray-300 flex flex-col md:flex-row md:items-end gap-4"
+            >
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700 mb-1">
+                  Texte de l'événement
+                </label>
+                <input
+                  type="text"
+                  className="border rounded px-2 py-1"
+                  value={eventText}
+                  onChange={(e) => setEventText(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700 mb-1">
+                  Date/heure
+                </label>
+                <input
+                  type="datetime-local"
+                  className="border rounded px-2 py-1"
+                  value={eventTime}
+                  onChange={(e) => setEventTime(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700 mb-1">
+                  Catégories
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {chartList.map((chart) => (
+                    <label
+                      key={chart.key}
+                      className="flex items-center gap-1 text-xs"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={eventCategories.includes(chart.key)}
+                        onChange={(e) => {
+                          if (e.target.checked)
+                            setEventCategories((prev) => [...prev, chart.key]);
+                          else
+                            setEventCategories((prev) =>
+                              prev.filter((k) => k !== chart.key)
+                            );
+                        }}
+                      />
+                      {chart.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
+              >
+                Ajouter événement
+              </button>
+            </form>
             {/* Section Ambiance */}
             <div>
               <h2 className="text-lg font-bold text-gray-700 mb-3">Ambiance</h2>
@@ -738,7 +823,8 @@ function App() {
                           options={getChartOptionsWithBounds(
                             chart.dataKey as any,
                             chart.label,
-                            chart.color
+                            chart.color,
+                            chart.key // Correction ici : passer la catégorie
                           )}
                         />
                       ) : (
@@ -791,7 +877,8 @@ function App() {
                           options={getChartOptionsWithBounds(
                             chart.dataKey as any,
                             chart.label,
-                            chart.color
+                            chart.color,
+                            chart.key // Correction ici aussi
                           )}
                         />
                       ) : (
@@ -839,7 +926,8 @@ function App() {
                           options={getChartOptionsWithBounds(
                             chart.dataKey as any,
                             chart.label,
-                            chart.color
+                            chart.color,
+                            chart.key // Correction ici aussi
                           )}
                         />
                       ) : (
