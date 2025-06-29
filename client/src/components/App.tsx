@@ -9,7 +9,7 @@ import {
   Title,
   Tooltip,
   Legend,
-  TimeScale, // Ajout du TimeScale
+  TimeScale,
 } from "chart.js";
 import annotationPlugin from "chartjs-plugin-annotation";
 import "chartjs-adapter-date-fns";
@@ -27,7 +27,7 @@ ChartJS.register(
   Tooltip,
   Legend,
   annotationPlugin,
-  TimeScale // Enregistrement du TimeScale pour l'axe temporel
+  TimeScale
 );
 
 interface SensorData {
@@ -65,12 +65,10 @@ function App() {
       categories: string[];
     }[]
   >([]);
-  // Nouveaux états pour le formulaire d'ajout d'événement
   const [eventText, setEventText] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [eventCategories, setEventCategories] = useState<string[]>([]);
 
-  // Bornes par défaut (modifiable facilement)
   const BORNES = {
     phReservoir: { min: 5.5, max: 6.5 },
     phBac: { min: 5.5, max: 6.5 },
@@ -80,15 +78,14 @@ function App() {
     oxygenBac: { min: 80, max: 100 },
     temperature: { min: 18, max: 26 },
     humidity: { min: 40, max: 70 },
-    waterLevelReservoir: { min: 20, max: 100 }, // bornes fictives
-    waterLevelBac: { min: 10, max: 45 }, // bornes fictives
+    waterLevelReservoir: { min: 20, max: 100 },
+    waterLevelBac: { min: 10, max: 45 },
   };
 
-  // Bornes éditables pour l'UI
   const [editableBornes, setEditableBornes] = useState({ ...BORNES });
 
   // Bornes par défaut pour chaque plante
-  const PLANT_BORNES = {
+  const DEFAULT_PLANT_BORNES = {
     basilic: {
       phReservoir: { min: 5.5, max: 6.5 },
       phBac: { min: 5.5, max: 6.5 },
@@ -115,8 +112,9 @@ function App() {
     },
   } as const;
 
-  type PlantKey = keyof typeof PLANT_BORNES | "";
+  type PlantKey = keyof typeof DEFAULT_PLANT_BORNES | "";
   const [selectedPlant, setSelectedPlant] = useState<PlantKey>("");
+  const [plantBornes, setPlantBornes] = useState<any>({ ...DEFAULT_PLANT_BORNES });
 
   // Liste des graphiques disponibles
   const chartList = [
@@ -212,7 +210,7 @@ function App() {
         humidity: 40 + Math.random() * 20,
         lightLevel: 500 + Math.random() * 300,
         nutrients: {
-          nitrogen: 200 + Math.random() * 100, // PPM
+          nitrogen: 200 + Math.random() * 100,
           phosphorus: 50 + Math.random() * 30,
           potassium: 150 + Math.random() * 50,
         },
@@ -220,10 +218,10 @@ function App() {
         phBac: 5.5 + Math.random() * 2,
         ecReservoir: 1.2 + Math.random() * 0.6,
         ecBac: 1.2 + Math.random() * 0.6,
-        oxygenReservoir: 80 + Math.random() * 10, // % saturation
+        oxygenReservoir: 80 + Math.random() * 10,
         oxygenBac: 80 + Math.random() * 10,
-        waterLevelReservoir: 40 + Math.random() * 60, // 0-100
-        waterLevelBac: Math.max(0, 40 + Math.random() * 60 - 55), // 0-100, décalé pour le bac
+        waterLevelReservoir: 40 + Math.random() * 60,
+        waterLevelBac: Math.max(0, 40 + Math.random() * 60 - 55),
       });
     }
     return data;
@@ -248,8 +246,8 @@ function App() {
         borderColor: "#f59e42",
         borderWidth: 2,
         label: {
-          display: false, // n'affiche pas en permanence
-          content: ev.text, // texte complet
+          display: false,
+          content: ev.text,
           enabled: true,
           position: "start",
           backgroundColor: "#f59e42",
@@ -262,8 +260,6 @@ function App() {
     return annotationsObj;
   }
 
-  // Préparer les données pour les graphiques
-  // Adapter getChartData pour axe X temporel
   const getChartData = (
     dataKey: keyof SensorData,
     label: string,
@@ -319,7 +315,6 @@ function App() {
       }
     });
     csv += "\n";
-    // Pour chaque point de temps, ajouter les valeurs sélectionnées
     sensorData.forEach((data) => {
       const date = new Date(data.timestamp);
       const hour =
@@ -330,7 +325,6 @@ function App() {
       let row = `${hour}`;
       chartList.forEach((chart) => {
         if (selectedCharts.includes(chart.key)) {
-          // Récupérer la valeur (attention à dataKey)
           const value =
             typeof data[chart.dataKey as keyof SensorData] === "object"
               ? ""
@@ -451,10 +445,10 @@ function App() {
 
   // Met à jour les bornes selon la plante sélectionnée
   useEffect(() => {
-    if (selectedPlant && PLANT_BORNES[selectedPlant]) {
-      setEditableBornes({ ...PLANT_BORNES[selectedPlant] });
+    if (selectedPlant && plantBornes[selectedPlant]) {
+      setEditableBornes({ ...plantBornes[selectedPlant] });
     }
-  }, [selectedPlant]);
+  }, [selectedPlant, plantBornes]);
 
   // Fonction pour envoyer la commande flush au serveur
   const handleFlushReservoir = async () => {
@@ -471,6 +465,65 @@ function App() {
     } catch (err) {
       alert("Erreur de connexion au serveur.");
     }
+  };
+
+  const handleExportPlantBoundsCSV = () => {
+    const rows = ["Plant;Parameter;Min;Max"];
+    Object.entries(plantBornes).forEach(([plant, params]) => {
+      Object.entries(params as { [key: string]: { min: number; max: number } }).forEach(([param, val]) => {
+        rows.push(`${plant};${param};${val.min};${val.max}`);
+      });
+    });
+    const csv = rows.join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "plant_bounds.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportPlantBoundsCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      let text = event.target?.result as string;
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (lines.length < 2) {
+        alert("CSV file is empty or badly formatted.");
+        return;
+      }
+      const header = lines[0].split(";").map(h => h.trim().toLowerCase());
+      if (header.length < 4 || header[0] !== "plant" || !header[1].startsWith("param")) {
+        alert("Invalid CSV header. Expected format: Plant;Parameter;Min;Max");
+        return;
+      }
+      const newPlantBornes: any = {};
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(";");
+        if (cols.length < 4) continue;
+        const [plant, param, min, max] = cols.map(c => c.trim());
+        if (!plant || !param || isNaN(Number(min)) || isNaN(Number(max))) continue;
+        if (!newPlantBornes[plant]) newPlantBornes[plant] = {};
+        newPlantBornes[plant][param] = { min: parseFloat(min), max: parseFloat(max) };
+      }
+      if (Object.keys(newPlantBornes).length === 0) {
+        alert("No valid data found in CSV.");
+        return;
+      }
+      setPlantBornes((prev: any) => ({ ...prev, ...newPlantBornes }));
+      if (selectedPlant && newPlantBornes[selectedPlant]) {
+        setEditableBornes({ ...newPlantBornes[selectedPlant] });
+      }
+      alert("Import successful! Bounds have been updated.");
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";
   };
 
   return (
@@ -1228,8 +1281,40 @@ function App() {
                       </div>
                     );
                   })}
+                  <button
+                    type="button"
+                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700 self-end"
+                    onClick={() => {
+                      if (selectedPlant) {
+                        setPlantBornes((prev: any) => ({
+                          ...prev,
+                          [selectedPlant]: { ...editableBornes },
+                        }));
+                        alert('Bornes enregistrées pour la plante sélectionnée !');
+                      }
+                    }}
+                  >
+                    Enregistrer
+                  </button>
                 </form>
               </div>
+            </div>
+            <div className="flex flex-col gap-6">
+              <button
+                className="px-4 py-1 border-2 border-green-600 text-green-700 rounded bg-white font-semibold hover:bg-green-50 hover:border-green-800 transition self-end"
+                onClick={handleExportPlantBoundsCSV}
+              >
+                Exporter les bornes plantes en CSV
+              </button>
+              <label className="self-end cursor-pointer px-4 py-1 border-2 border-blue-600 text-blue-700 rounded bg-white font-semibold hover:bg-blue-50 hover:border-blue-800 transition">
+                Importer un CSV bornes plantes
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleImportPlantBoundsCSV}
+                  style={{ display: "none" }}
+                />
+              </label>
             </div>
           </div>
         ) : null}
