@@ -27,6 +27,12 @@ app.get('/api/water-level', (req, res) => {
   res.json({ level: waterLevel });
 });
 
+// Route pour flush le réservoir (mock)
+app.post('/flush-reservoir', (req, res) => {
+  // Ici, on pourrait déclencher le flush réel à l'avenir
+  res.json({ status: 'ok', message: 'Flush command received' });
+});
+
 // Fonction pour générer des données mockées
 function generateMockData(hours) {
   const now = new Date();

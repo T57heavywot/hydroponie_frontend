@@ -456,6 +456,23 @@ function App() {
     }
   }, [selectedPlant]);
 
+  // Fonction pour envoyer la commande flush au serveur
+  const handleFlushReservoir = async () => {
+    try {
+      const response = await fetch("/flush-reservoir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (response.ok) {
+        alert("Commande flush envoyée au serveur !");
+      } else {
+        alert("Erreur lors de l'envoi de la commande.");
+      }
+    } catch (err) {
+      alert("Erreur de connexion au serveur.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -1142,6 +1159,17 @@ function App() {
                       </span>
                       <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
                         Remplir
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700 text-base">
+                        Flush le réservoir
+                      </span>
+                      <button
+                        className="px-4 py-1 border-2 border-red-600 text-red-700 rounded bg-white font-semibold hover:bg-red-50 hover:border-red-800 transition"
+                        onClick={handleFlushReservoir}
+                      >
+                        Flush
                       </button>
                     </div>
                   </div>
