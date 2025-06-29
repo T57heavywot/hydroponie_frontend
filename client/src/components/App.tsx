@@ -87,6 +87,37 @@ function App() {
   // Bornes éditables pour l'UI
   const [editableBornes, setEditableBornes] = useState({ ...BORNES });
 
+  // Bornes par défaut pour chaque plante
+  const PLANT_BORNES = {
+    basilic: {
+      phReservoir: { min: 5.5, max: 6.5 },
+      phBac: { min: 5.5, max: 6.5 },
+      ecReservoir: { min: 1.2, max: 1.6 },
+      ecBac: { min: 1.2, max: 1.6 },
+      oxygenReservoir: { min: 80, max: 100 },
+      oxygenBac: { min: 80, max: 100 },
+      temperature: { min: 20, max: 28 },
+      humidity: { min: 50, max: 70 },
+      waterLevelReservoir: { min: 20, max: 100 },
+      waterLevelBac: { min: 10, max: 45 },
+    },
+    tomate: {
+      phReservoir: { min: 5.5, max: 6.5 },
+      phBac: { min: 5.5, max: 6.5 },
+      ecReservoir: { min: 2.0, max: 5.0 },
+      ecBac: { min: 2.0, max: 5.0 },
+      oxygenReservoir: { min: 80, max: 100 },
+      oxygenBac: { min: 80, max: 100 },
+      temperature: { min: 18, max: 26 },
+      humidity: { min: 40, max: 70 },
+      waterLevelReservoir: { min: 20, max: 100 },
+      waterLevelBac: { min: 10, max: 45 },
+    },
+  } as const;
+
+  type PlantKey = keyof typeof PLANT_BORNES | "";
+  const [selectedPlant, setSelectedPlant] = useState<PlantKey>("");
+
   // Liste des graphiques disponibles
   const chartList = [
     {
@@ -417,6 +448,13 @@ function App() {
     setEventTime("");
     setEventCategories([]);
   };
+
+  // Met à jour les bornes selon la plante sélectionnée
+  useEffect(() => {
+    if (selectedPlant && PLANT_BORNES[selectedPlant]) {
+      setEditableBornes({ ...PLANT_BORNES[selectedPlant] });
+    }
+  }, [selectedPlant]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -1053,124 +1091,117 @@ function App() {
             </div>
           </div>
         ) : activeTab === "Commandes" ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Bloc Commandes */}
-            <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-center border border-gray-300 min-h-[340px]">
-              <div className="flex flex-col gap-8">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-700">
-                    Ouverture des valves
-                  </span>
-                  <div className="flex gap-4">
-                    <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
-                      Ouverture
-                    </button>
-                    <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
-                      Fermeture
-                    </button>
+          <div className="flex flex-col gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Bloc Actions rapides avec sélecteur de plante */}
+              <div className="flex justify-center">
+                <div className="bg-white rounded-xl shadow p-10 flex flex-col gap-8 border border-gray-300 min-w-[350px] max-w-lg w-full">
+                  <h2 className="text-xl font-bold text-gray-800 mb-2 text-center">
+                    Actions rapides
+                  </h2>
+                  {/* Sélecteur de plante */}
+                  <div className="mb-4">
+                    <label className="block text-gray-700 font-medium mb-2 text-lg">
+                      Plante par défaut
+                    </label>
+                    <select
+                      className="border border-gray-300 rounded px-3 py-2 text-base w-full"
+                      value={selectedPlant}
+                      onChange={e => setSelectedPlant(e.target.value as PlantKey)}
+                    >
+                      <option value="">-- Choisir une plante --</option>
+                      <option value="basilic">Basilic</option>
+                      <option value="tomate">Tomate</option>
+                    </select>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-700">
-                    Ajouter des nutriments
-                  </span>
-                  <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
-                    Ajouter
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-700">
-                    Remplir le bac d'eau du système
-                  </span>
-                  <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
-                    Remplir
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* Bloc graphique Conductivité (réservoir) */}
-            <div className="bg-white rounded-xl shadow p-8 flex flex-col border border-gray-300 min-h-[340px]">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                Évolution de la conductivité (réservoir)
-              </h2>
-              <div className="flex-1 min-h-[220px]">
-                {getChartData(
-                  "ecReservoir",
-                  "Conductivité (réservoir)",
-                  "#a855f7"
-                ) ? (
-                  <Line
-                    data={
-                      getChartData(
-                        "ecReservoir",
-                        "Conductivité (réservoir)",
-                        "#a855f7"
-                      )!
-                    }
-                    options={chartOptions}
-                  />
-                ) : (
-                  <div className="text-gray-400 text-sm">
-                    Aucune donnée à afficher
-                  </div>
-                )}
-              </div>
-            </div>
-            {/* Bloc édition des bornes */}
-            <div className="bg-white rounded-xl shadow p-8 flex flex-col border border-gray-300 min-h-[340px] mb-8">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                Modifier les bornes des graphiques
-              </h2>
-              <form
-                className="flex flex-col gap-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  // Les bornes sont déjà modifiées en temps réel dans editableBornes
-                }}
-              >
-                {Object.entries(editableBornes).map(([key, val]) => {
-                  const typedKey = key as keyof typeof editableBornes;
-                  return (
-                    <div key={key} className="flex items-center gap-2">
-                      <span className="w-40 font-medium text-gray-700">
-                        {key}
+                  <div className="flex flex-col gap-6">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700 text-base">
+                        Ouverture des valves
                       </span>
-                      <label className="text-sm">Min</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="border rounded px-2 py-1 w-20"
-                        value={val.min}
-                        onChange={(e) =>
-                          setEditableBornes((b) => ({
-                            ...b,
-                            [typedKey]: {
-                              ...b[typedKey],
-                              min: parseFloat(e.target.value),
-                            },
-                          }))
-                        }
-                      />
-                      <label className="text-sm">Max</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="border rounded px-2 py-1 w-20"
-                        value={val.max}
-                        onChange={(e) =>
-                          setEditableBornes((b) => ({
-                            ...b,
-                            [typedKey]: {
-                              ...b[typedKey],
-                              max: parseFloat(e.target.value),
-                            },
-                          }))
-                        }
-                      />
+                      <div className="flex gap-4">
+                        <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
+                          Ouverture
+                        </button>
+                        <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
+                          Fermeture
+                        </button>
+                      </div>
                     </div>
-                  );
-                })}
-              </form>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700 text-base">
+                        Ajouter des nutriments
+                      </span>
+                      <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
+                        Ajouter
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700 text-base">
+                        Remplir le bac d'eau du système
+                      </span>
+                      <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
+                        Remplir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Bloc édition des bornes */}
+              <div className="bg-white rounded-xl shadow p-8 border border-gray-300 flex flex-col justify-center">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  Modifier les bornes des graphiques
+                </h2>
+                <form
+                  className="flex flex-col gap-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                  }}
+                >
+                  {Object.entries(editableBornes).map(([key, val]) => {
+                    const typedKey = key as keyof typeof editableBornes;
+                    return (
+                      <div key={key} className="flex items-center gap-2">
+                        <span className="w-40 font-medium text-gray-700 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1')}
+                        </span>
+                        <label className="text-sm">Min</label>
+                        <input
+                          type="number"
+                          step="any"
+                          className="border rounded px-2 py-1 w-20"
+                          value={val.min}
+                          onChange={(e) =>
+                            setEditableBornes((b) => ({
+                              ...b,
+                              [typedKey]: {
+                                ...b[typedKey],
+                                min: parseFloat(e.target.value),
+                              },
+                            }))
+                          }
+                        />
+                        <label className="text-sm">Max</label>
+                        <input
+                          type="number"
+                          step="any"
+                          className="border rounded px-2 py-1 w-20"
+                          value={val.max}
+                          onChange={(e) =>
+                            setEditableBornes((b) => ({
+                              ...b,
+                              [typedKey]: {
+                                ...b[typedKey],
+                                max: parseFloat(e.target.value),
+                              },
+                            }))
+                          }
+                        />
+                      </div>
+                    );
+                  })}
+                </form>
+              </div>
             </div>
           </div>
         ) : null}
