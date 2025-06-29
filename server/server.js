@@ -28,7 +28,7 @@ app.get('/api/water-level', (req, res) => {
 });
 
 // Route pour flush le réservoir (mock)
-app.post('/flush-reservoir', (req, res) => {
+app.post('/api/flush-reservoir', (req, res) => {
   // Ici, on pourrait déclencher le flush réel à l'avenir
   res.json({ status: 'ok', message: 'Flush command received' });
 });

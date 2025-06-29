@@ -459,7 +459,7 @@ function App() {
   // Fonction pour envoyer la commande flush au serveur
   const handleFlushReservoir = async () => {
     try {
-      const response = await fetch("/flush-reservoir", {
+      const response = await fetch("/api/flush-reservoir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
