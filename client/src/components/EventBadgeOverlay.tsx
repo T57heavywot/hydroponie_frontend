@@ -26,7 +26,15 @@ const EventBadgeOverlay: React.FC<EventBadgeOverlayProps> = ({
   }, [events, xScale, chartRef]);
 
   return (
-    <div style={{ position: "absolute", left: 0, top: 0, width: "100%", pointerEvents: "none" }}>
+    <div
+      style={{
+        position: "absolute",
+        left: 0,
+        top: 0,
+        width: "100%",
+        pointerEvents: "none",
+      }}
+    >
       {positions.map((pos, i) => (
         <div
           key={i}

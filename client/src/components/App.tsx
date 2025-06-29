@@ -84,6 +84,9 @@ function App() {
     waterLevelBac: { min: 10, max: 45 }, // bornes fictives
   };
 
+  // Bornes éditables pour l'UI
+  const [editableBornes, setEditableBornes] = useState({ ...BORNES });
+
   // Liste des graphiques disponibles
   const chartList = [
     {
@@ -329,7 +332,7 @@ function App() {
     color: string,
     category?: string
   ) => {
-    const bounds = BORNES[dataKey];
+    const bounds = editableBornes[dataKey];
     const eventAnnotations = getEventAnnotations(category || "");
     const annotations: Record<string, any> = { ...eventAnnotations };
     if (bounds) {
@@ -774,7 +777,9 @@ function App() {
                       className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 bg-white rounded p-2 border border-gray-200"
                     >
                       <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2">
-                        <span className="font-medium text-gray-800">{ev.text}</span>
+                        <span className="font-medium text-gray-800">
+                          {ev.text}
+                        </span>
                         <span className="text-xs text-gray-500">
                           {new Date(ev.time).toLocaleString()}
                         </span>
@@ -796,7 +801,9 @@ function App() {
                         title="Supprimer l'événement"
                         className="text-red-600 hover:text-red-800 text-xl px-2"
                         onClick={() =>
-                          setEvents((prev) => prev.filter((e) => e.id !== ev.id))
+                          setEvents((prev) =>
+                            prev.filter((e) => e.id !== ev.id)
+                          )
                         }
                         aria-label="Supprimer"
                       >
@@ -1108,6 +1115,62 @@ function App() {
                   </div>
                 )}
               </div>
+            </div>
+            {/* Bloc édition des bornes */}
+            <div className="bg-white rounded-xl shadow p-8 flex flex-col border border-gray-300 min-h-[340px] mb-8">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                Modifier les bornes des graphiques
+              </h2>
+              <form
+                className="flex flex-col gap-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  // Les bornes sont déjà modifiées en temps réel dans editableBornes
+                }}
+              >
+                {Object.entries(editableBornes).map(([key, val]) => {
+                  const typedKey = key as keyof typeof editableBornes;
+                  return (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="w-40 font-medium text-gray-700">
+                        {key}
+                      </span>
+                      <label className="text-sm">Min</label>
+                      <input
+                        type="number"
+                        step="any"
+                        className="border rounded px-2 py-1 w-20"
+                        value={val.min}
+                        onChange={(e) =>
+                          setEditableBornes((b) => ({
+                            ...b,
+                            [typedKey]: {
+                              ...b[typedKey],
+                              min: parseFloat(e.target.value),
+                            },
+                          }))
+                        }
+                      />
+                      <label className="text-sm">Max</label>
+                      <input
+                        type="number"
+                        step="any"
+                        className="border rounded px-2 py-1 w-20"
+                        value={val.max}
+                        onChange={(e) =>
+                          setEditableBornes((b) => ({
+                            ...b,
+                            [typedKey]: {
+                              ...b[typedKey],
+                              max: parseFloat(e.target.value),
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </form>
             </div>
           </div>
         ) : null}
