@@ -458,9 +458,9 @@ function App() {
         headers: { "Content-Type": "application/json" },
       });
       if (response.ok) {
-        alert("Commande flush envoyée au serveur !");
+        alert("Commande de vidange envoyée au serveur !");
       } else {
-        alert("Erreur lors de l'envoi de la commande.");
+        alert("Erreur lors de l'envoi de la commande de vidange.");
       }
     } catch (err) {
       alert("Erreur de connexion au serveur.");
@@ -495,12 +495,12 @@ function App() {
       if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
       const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
       if (lines.length < 2) {
-        alert("CSV file is empty or badly formatted.");
+        alert("Le fichier CSV est vide ou mal formaté.");
         return;
       }
       const header = lines[0].split(";").map(h => h.trim().toLowerCase());
       if (header.length < 4 || header[0] !== "plant" || !header[1].startsWith("param")) {
-        alert("Invalid CSV header. Expected format: Plant;Parameter;Min;Max");
+        alert("En-tête CSV invalide. Format attendu : Plant;Parameter;Min;Max");
         return;
       }
       const newPlantBornes: any = {};
@@ -513,17 +513,29 @@ function App() {
         newPlantBornes[plant][param] = { min: parseFloat(min), max: parseFloat(max) };
       }
       if (Object.keys(newPlantBornes).length === 0) {
-        alert("No valid data found in CSV.");
+        alert("Aucune donnée valide trouvée dans le CSV.");
         return;
       }
       setPlantBornes((prev: any) => ({ ...prev, ...newPlantBornes }));
       if (selectedPlant && newPlantBornes[selectedPlant]) {
         setEditableBornes({ ...newPlantBornes[selectedPlant] });
       }
-      alert("Import successful! Bounds have been updated.");
+      alert("Importation réussie ! Les bornes ont été mises à jour.");
     };
     reader.readAsText(file, "utf-8");
     e.target.value = "";
+  };
+
+  // Dictionnaire de traduction des paramètres pour l'affichage
+  const PARAM_LABELS: Record<string, string> = {
+    phReservoir: "pH réservoir",
+    phBac: "pH bac",
+    ecReservoir: "Conductivité réservoir",
+    ecBac: "Conductivité bac",
+    oxygenReservoir: "Oxygène réservoir",
+    oxygenBac: "Oxygène bac",
+    temperature: "Température ambiante",
+    humidity: "Humidité ambiante",
   };
 
   return (
@@ -1216,13 +1228,13 @@ function App() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-gray-700 text-base">
-                        Flush le réservoir
+                        Vidanger le réservoir
                       </span>
                       <button
                         className="px-4 py-1 border-2 border-red-600 text-red-700 rounded bg-white font-semibold hover:bg-red-50 hover:border-red-800 transition"
                         onClick={handleFlushReservoir}
                       >
-                        Flush
+                        Vidanger
                       </button>
                     </div>
                   </div>
@@ -1239,48 +1251,50 @@ function App() {
                     e.preventDefault();
                   }}
                 >
-                  {Object.entries(editableBornes).map(([key, val]) => {
-                    const typedKey = key as keyof typeof editableBornes;
-                    return (
-                      <div key={key} className="flex items-center gap-2">
-                        <span className="w-40 font-medium text-gray-700 capitalize">
-                          {key.replace(/([A-Z])/g, ' $1')}
-                        </span>
-                        <label className="text-sm">Min</label>
-                        <input
-                          type="number"
-                          step="any"
-                          className="border rounded px-2 py-1 w-20"
-                          value={val.min}
-                          onChange={(e) =>
-                            setEditableBornes((b) => ({
-                              ...b,
-                              [typedKey]: {
-                                ...b[typedKey],
-                                min: parseFloat(e.target.value),
-                              },
-                            }))
-                          }
-                        />
-                        <label className="text-sm">Max</label>
-                        <input
-                          type="number"
-                          step="any"
-                          className="border rounded px-2 py-1 w-20"
-                          value={val.max}
-                          onChange={(e) =>
-                            setEditableBornes((b) => ({
-                              ...b,
-                              [typedKey]: {
-                                ...b[typedKey],
-                                max: parseFloat(e.target.value),
-                              },
-                            }))
-                          }
-                        />
-                      </div>
-                    );
-                  })}
+                  {Object.entries(editableBornes)
+  .filter(([key]) => key !== "waterLevelReservoir" && key !== "waterLevelBac")
+  .map(([key, val]) => {
+    const typedKey = key as keyof typeof editableBornes;
+    return (
+      <div key={key} className="flex items-center gap-2">
+        <span className="w-48 font-medium text-gray-700">
+          {PARAM_LABELS[key] || key}
+        </span>
+        <label className="text-sm">Min</label>
+        <input
+          type="number"
+          step="any"
+          className="border rounded px-2 py-1 w-20"
+          value={val.min}
+          onChange={(e) =>
+            setEditableBornes((b) => ({
+              ...b,
+              [typedKey]: {
+                ...b[typedKey],
+                min: parseFloat(e.target.value),
+              },
+            }))
+          }
+        />
+        <label className="text-sm">Max</label>
+        <input
+          type="number"
+          step="any"
+          className="border rounded px-2 py-1 w-20"
+          value={val.max}
+          onChange={(e) =>
+            setEditableBornes((b) => ({
+              ...b,
+              [typedKey]: {
+                ...b[typedKey],
+                max: parseFloat(e.target.value),
+              },
+            }))
+          }
+        />
+      </div>
+    );
+  })}
                   <button
                     type="button"
                     className="mt-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700 self-end"
