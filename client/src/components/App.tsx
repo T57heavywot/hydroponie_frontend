@@ -541,6 +541,21 @@ function App() {
     humidity: "Humidité ambiante",
   };
 
+  const [showAddPlantModal, setShowAddPlantModal] = useState(false);
+  const [newPlantName, setNewPlantName] = useState("");
+  const [newPlantBornes, setNewPlantBornes] = useState<any>({
+    phReservoir: { min: 5.5, max: 6.5 },
+    phBac: { min: 5.5, max: 6.5 },
+    ecReservoir: { min: 1.2, max: 2.0 },
+    ecBac: { min: 1.2, max: 2.0 },
+    oxygenReservoir: { min: 80, max: 100 },
+    oxygenBac: { min: 80, max: 100 },
+    temperature: { min: 18, max: 26 },
+    humidity: { min: 40, max: 70 },
+    waterLevelReservoir: { min: 20, max: 100 },
+    waterLevelBac: { min: 10, max: 45 },
+  });
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -1198,27 +1213,52 @@ function App() {
                   <h2 className="text-xl font-bold text-gray-800 mb-2 text-center">
                     Actions rapides
                   </h2>
-                  {/* Sélecteur de plante */}
                   <div className="mb-4">
-                    <label className="block text-gray-700 font-medium mb-2 text-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Plante par défaut
                     </label>
-                    <select
-                      className="border border-gray-300 rounded px-3 py-2 text-base w-full"
-                      value={selectedPlant}
-                      onChange={e => setSelectedPlant(e.target.value as PlantKey)}
-                    >
-                      <option value="">-- Choisir une plante --</option>
-                      <option value="basilic">Basilic</option>
-                      <option value="tomate">Tomate</option>
-                    </select>
+                    <div className="flex gap-2 items-center">
+                      <select
+                        className="border rounded px-2 py-1 w-full"
+                        value={selectedPlant}
+                        onChange={e => setSelectedPlant(e.target.value as PlantKey)}
+                      >
+                        <option value="">-- Choisir une plante --</option>
+                        {Object.keys(plantBornes).map((plant) => (
+                          <option key={plant} value={plant}>{plant.charAt(0).toUpperCase() + plant.slice(1)}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="ml-2 px-2 py-1 bg-green-100 text-green-800 border border-green-600 rounded font-semibold hover:bg-green-200"
+                        onClick={() => {
+                          setNewPlantName("");
+                          setNewPlantBornes({
+                            phReservoir: { min: 5.5, max: 6.5 },
+                            phBac: { min: 5.5, max: 6.5 },
+                            ecReservoir: { min: 1.2, max: 2.0 },
+                            ecBac: { min: 1.2, max: 2.0 },
+                            oxygenReservoir: { min: 80, max: 100 },
+                            oxygenBac: { min: 80, max: 100 },
+                            temperature: { min: 18, max: 26 },
+                            humidity: { min: 40, max: 70 },
+                            waterLevelReservoir: { min: 20, max: 100 },
+                            waterLevelBac: { min: 10, max: 45 },
+                          });
+                          setShowAddPlantModal(true);
+                        }}
+                        title="Ajouter une nouvelle plante"
+                      >
+                        + Ajouter une plante
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700 text-base">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-700">
                         Ouverture des valves
                       </span>
-                      <div className="flex gap-4">
+                      <div className="flex gap-2">
                         <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
                           Ouverture
                         </button>
@@ -1227,28 +1267,28 @@ function App() {
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700 text-base">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-700">
                         Ajouter des nutriments
                       </span>
                       <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
                         Ajouter
                       </button>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700 text-base">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-700">
                         Remplir le bac d'eau du système
                       </span>
                       <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
                         Remplir
                       </button>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700 text-base">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-700">
                         Vidanger le réservoir
                       </span>
                       <button
-                        className="px-4 py-1 border-2 border-red-600 text-red-700 rounded bg-white font-semibold hover:bg-red-50 hover:border-red-800 transition"
+                        className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50"
                         onClick={handleFlushReservoir}
                       >
                         Vidanger
@@ -1258,7 +1298,7 @@ function App() {
                 </div>
               </div>
               {/* Bloc édition des bornes */}
-              <div className="bg-white rounded-xl shadow p-8 border border-gray-300 flex flex-col justify-center">
+              <div className="bg-white rounded-xl shadow p-8 border border-gray-300 flex flex-col justify-between">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">
                   Modifier les bornes des graphiques
                 </h2>
@@ -1328,25 +1368,113 @@ function App() {
                     Enregistrer
                   </button>
                 </form>
+                <div className="flex gap-4 mt-6 justify-end">
+                  <button
+                    className="px-4 py-2 bg-green-100 text-green-800 border border-green-600 rounded font-semibold hover:bg-green-200"
+                    onClick={handleExportPlantBoundsCSV}
+                  >
+                    Exporter les bornes plantes en CSV
+                  </button>
+                  <label className="px-4 py-2 bg-white text-blue-800 border border-blue-600 rounded font-semibold hover:bg-blue-50 cursor-pointer">
+                    Importer un CSV bornes plantes
+                    <input
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={handleImportPlantBoundsCSV}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
-            <div className="flex flex-col gap-6">
-              <button
-                className="px-4 py-1 border-2 border-green-600 text-green-700 rounded bg-white font-semibold hover:bg-green-50 hover:border-green-800 transition self-end"
-                onClick={handleExportPlantBoundsCSV}
-              >
-                Exporter les bornes plantes en CSV
-              </button>
-              <label className="self-end cursor-pointer px-4 py-1 border-2 border-blue-600 text-blue-700 rounded bg-white font-semibold hover:bg-blue-50 hover:border-blue-800 transition">
-                Importer un CSV bornes plantes
-                <input
-                  type="file"
-                  accept=".csv,text/csv"
-                  onChange={handleImportPlantBoundsCSV}
-                  style={{ display: "none" }}
-                />
-              </label>
-            </div>
+            {/* Modal d'ajout de plante */}
+            {showAddPlantModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg p-8 min-w-[350px] max-w-lg w-full relative">
+                  <button
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
+                    onClick={() => setShowAddPlantModal(false)}
+                    title="Fermer"
+                  >
+                    ×
+                  </button>
+                  <h2 className="text-lg font-bold mb-4">Ajouter une nouvelle plante</h2>
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      const name = newPlantName.trim().toLowerCase();
+                      if (!name) {
+                        alert("Veuillez saisir un nom de plante.");
+                        return;
+                      }
+                      if (plantBornes[name]) {
+                        alert("Cette plante existe déjà.");
+                        return;
+                      }
+                      setPlantBornes((prev: any) => ({
+                        ...prev,
+                        [name]: { ...newPlantBornes },
+                      }));
+                      setSelectedPlant(name as PlantKey);
+                      setEditableBornes({ ...newPlantBornes });
+                      setShowAddPlantModal(false);
+                    }}
+                    className="flex flex-col gap-4"
+                  >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la plante</label>
+                      <input
+                        type="text"
+                        className="border rounded px-2 py-1 w-full"
+                        value={newPlantName}
+                        onChange={e => setNewPlantName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    {Object.entries(newPlantBornes)
+  .filter(([key]) => key !== "waterLevelReservoir" && key !== "waterLevelBac")
+  .map(([key, val]) => {
+    const v = val as { min: number; max: number };
+    return (
+      <div key={key} className="flex items-center gap-2">
+        <span className="w-48 font-medium text-gray-700">{PARAM_LABELS[key] || key}</span>
+        <label className="text-sm">Min</label>
+        <input
+          type="number"
+          step="any"
+          className="border rounded px-2 py-1 w-20"
+          value={v.min}
+          onChange={e => setNewPlantBornes((b: any) => ({
+            ...b,
+            [key]: { ...b[key], min: parseFloat(e.target.value) },
+          }))}
+          required
+        />
+        <label className="text-sm">Max</label>
+        <input
+          type="number"
+          step="any"
+          className="border rounded px-2 py-1 w-20"
+          value={v.max}
+          onChange={e => setNewPlantBornes((b: any) => ({
+            ...b,
+            [key]: { ...b[key], max: parseFloat(e.target.value) },
+          }))}
+          required
+        />
+      </div>
+    );
+  })}
+                    <button
+                      type="submit"
+                      className="mt-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700 self-end"
+                    >
+                      Ajouter la plante
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
         {/* Information Box */}
