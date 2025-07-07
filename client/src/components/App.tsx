@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,6 +16,13 @@ import "./App.css";
 import WaterLevel from "./WaterLevel";
 import GaugeBar from "./GaugeBar";
 import EventBadgeOverlay from "./EventBadgeOverlay";
+import AddPlantModal from "./AddPlantModal";
+import EventForm from "./EventForm";
+import EventList from "./EventList";
+import ChartSection from "./ChartSection";
+import PlantBoundsCSVButtons from "./PlantBoundsCSVButtons";
+import InfoBox from "./InfoBox";
+import ChartTimeSelector from "./ChartTimeSelector";
 
 ChartJS.register(
   CategoryScale,
@@ -50,12 +56,39 @@ interface SensorData {
   waterLevelBac: number;
 }
 
+// Génère des données simulées pour la période choisie
+function generateMockData(hours: number): SensorData[] {
+  const now = new Date();
+  const data: SensorData[] = [];
+  for (let i = hours; i >= 0; i--) {
+    const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
+    data.push({
+      timestamp: timestamp.toISOString(),
+      temperature: 20 + Math.random() * 5,
+      humidity: 40 + Math.random() * 20,
+      lightLevel: 500 + Math.random() * 300,
+      nutrients: {
+        nitrogen: 200 + Math.random() * 100,
+        phosphorus: 50 + Math.random() * 30,
+        potassium: 150 + Math.random() * 50,
+      },
+      phReservoir: 5.5 + Math.random() * 2,
+      phBac: 5.5 + Math.random() * 2,
+      ecReservoir: 1.2 + Math.random() * 0.6,
+      ecBac: 1.2 + Math.random() * 0.6,
+      oxygenReservoir: 80 + Math.random() * 10,
+      oxygenBac: 80 + Math.random() * 10,
+      waterLevelReservoir: 40 + Math.random() * 60,
+      waterLevelBac: Math.max(0, 40 + Math.random() * 60 - 55),
+    });
+  }
+  return data;
+}
+
 function App() {
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [waterLevel, setWaterLevel] = useState({ level: 0 });
-  const [selectedHours, setSelectedHours] = useState<number>(6);
   const [activeTab, setActiveTab] = useState<string>("Accueil");
-  const [selectCharts, setSelectCharts] = useState(false);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
   const [events, setEvents] = useState<
     {
@@ -116,7 +149,9 @@ function App() {
 
   type PlantKey = keyof typeof DEFAULT_PLANT_BORNES | "";
   const [selectedPlant, setSelectedPlant] = useState<PlantKey>("");
-  const [plantBornes, setPlantBornes] = useState<any>({ ...DEFAULT_PLANT_BORNES });
+  const [plantBornes, setPlantBornes] = useState<any>({
+    ...DEFAULT_PLANT_BORNES,
+  });
 
   // Liste des graphiques disponibles
   const chartList = [
@@ -178,7 +213,9 @@ function App() {
   ];
 
   const chartRefs = useRef<Record<string, any>>({});
-  const [chartInstances, setChartInstances] = useState<Record<string, any>>({});
+
+  // Remettre l'état pour la période d'affichage des graphiques
+  const [selectedHours, setSelectedHours] = useState<number>(6);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -200,38 +237,6 @@ function App() {
 
     return () => clearInterval(interval);
   }, [selectedHours]);
-
-  const generateMockData = (hours: number): SensorData[] => {
-    const now = new Date();
-    const data: SensorData[] = [];
-    for (let i = hours; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
-      data.push({
-        timestamp: timestamp.toISOString(),
-        temperature: 20 + Math.random() * 5,
-        humidity: 40 + Math.random() * 20,
-        lightLevel: 500 + Math.random() * 300,
-        nutrients: {
-          nitrogen: 200 + Math.random() * 100,
-          phosphorus: 50 + Math.random() * 30,
-          potassium: 150 + Math.random() * 50,
-        },
-        phReservoir: 5.5 + Math.random() * 2,
-        phBac: 5.5 + Math.random() * 2,
-        ecReservoir: 1.2 + Math.random() * 0.6,
-        ecBac: 1.2 + Math.random() * 0.6,
-        oxygenReservoir: 80 + Math.random() * 10,
-        oxygenBac: 80 + Math.random() * 10,
-        waterLevelReservoir: 40 + Math.random() * 60,
-        waterLevelBac: Math.max(0, 40 + Math.random() * 60 - 55),
-      });
-    }
-    return data;
-  };
-
-  const handleHoursChange = (hours: number) => {
-    setSelectedHours(hours);
-  };
 
   // Génère les annotations pour un graphique donné
   // Correction du typage dans getEventAnnotations
@@ -262,8 +267,9 @@ function App() {
     return annotationsObj;
   }
 
+  // Correction des signatures pour accepter string en dataKey
   const getChartData = (
-    dataKey: keyof SensorData,
+    dataKey: string, // au lieu de keyof SensorData
     label: string,
     color: string
   ) => {
@@ -274,7 +280,10 @@ function App() {
           label,
           data: sensorData.map((data) => ({
             x: new Date(data.timestamp),
-            y: typeof data[dataKey] === "object" ? null : data[dataKey],
+            y:
+              typeof (data as any)[dataKey] === "object"
+                ? null
+                : (data as any)[dataKey],
           })),
           borderColor: color,
           backgroundColor: color + "20",
@@ -306,60 +315,18 @@ function App() {
     );
   };
 
-  // Gestion de l’export CSV des graphiques sélectionnés
-  const handleExportCSV = () => {
-    if (!selectCharts || selectedCharts.length === 0) return;
-    // Préparer les entêtes CSV
-    let csv = "Heure";
-    chartList.forEach((chart) => {
-      if (selectedCharts.includes(chart.key)) {
-        csv += `;${chart.label}`;
-      }
-    });
-    csv += "\n";
-    sensorData.forEach((data) => {
-      const date = new Date(data.timestamp);
-      const hour =
-        date.getHours() +
-        ":" +
-        (date.getMinutes() < 10 ? "0" : "") +
-        date.getMinutes();
-      let row = `${hour}`;
-      chartList.forEach((chart) => {
-        if (selectedCharts.includes(chart.key)) {
-          const value =
-            typeof data[chart.dataKey as keyof SensorData] === "object"
-              ? ""
-              : data[chart.dataKey as keyof SensorData];
-          row += `;${value}`;
-        }
-      });
-      csv += row + "\n";
-    });
-    // Télécharger le CSV
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "export_graphiques.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   // Récupérer la dernière valeur pour chaque catégorie
   const latestData =
     sensorData.length > 0 ? sensorData[sensorData.length - 1] : null;
 
   // Ajout d'une zone de bornes sur les graphiques si applicable
   const getChartOptionsWithBounds = (
-    dataKey: keyof typeof BORNES,
+    dataKey: string, // au lieu de keyof typeof BORNES
     label: string,
     color: string,
     category?: string
   ) => {
-    const bounds = editableBornes[dataKey];
+    const bounds = (editableBornes as any)[dataKey];
     const eventAnnotations = getEventAnnotations(category || "");
     const annotations: Record<string, any> = { ...eventAnnotations };
     if (bounds) {
@@ -470,65 +437,6 @@ function App() {
     }
   };
 
-  const handleExportPlantBoundsCSV = () => {
-    const rows = ["Plant;Parameter;Min;Max"];
-    Object.entries(plantBornes).forEach(([plant, params]) => {
-      Object.entries(params as { [key: string]: { min: number; max: number } }).forEach(([param, val]) => {
-        rows.push(`${plant};${param};${val.min};${val.max}`);
-      });
-    });
-    const csv = rows.join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "plant_bounds.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImportPlantBoundsCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      let text = event.target?.result as string;
-      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-      if (lines.length < 2) {
-        alert("Le fichier CSV est vide ou mal formaté.");
-        return;
-      }
-      const header = lines[0].split(";").map(h => h.trim().toLowerCase());
-      if (header.length < 4 || header[0] !== "plant" || !header[1].startsWith("param")) {
-        alert("En-tête CSV invalide. Format attendu : Plant;Parameter;Min;Max");
-        return;
-      }
-      const newPlantBornes: any = {};
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(";");
-        if (cols.length < 4) continue;
-        const [plant, param, min, max] = cols.map(c => c.trim());
-        if (!plant || !param || isNaN(Number(min)) || isNaN(Number(max))) continue;
-        if (!newPlantBornes[plant]) newPlantBornes[plant] = {};
-        newPlantBornes[plant][param] = { min: parseFloat(min), max: parseFloat(max) };
-      }
-      if (Object.keys(newPlantBornes).length === 0) {
-        alert("Aucune donnée valide trouvée dans le CSV.");
-        return;
-      }
-      setPlantBornes((prev: any) => ({ ...prev, ...newPlantBornes }));
-      if (selectedPlant && newPlantBornes[selectedPlant]) {
-        setEditableBornes({ ...newPlantBornes[selectedPlant] });
-      }
-      alert("Importation réussie ! Les bornes ont été mises à jour.");
-    };
-    reader.readAsText(file, "utf-8");
-    e.target.value = "";
-  };
-
   // Dictionnaire de traduction des paramètres pour l'affichage
   const PARAM_LABELS: Record<string, string> = {
     phReservoir: "pH réservoir",
@@ -555,6 +463,58 @@ function App() {
     waterLevelReservoir: { min: 20, max: 100 },
     waterLevelBac: { min: 10, max: 45 },
   });
+
+  // Handlers pour l'import/export CSV des bornes
+  const handleExportPlantBoundsCSV = () => {
+    const rows = ["Plant;Parameter;Min;Max"];
+    Object.entries(plantBornes).forEach(([plant, params]) => {
+      Object.entries(
+        params as { [key: string]: { min: number; max: number } }
+      ).forEach(([param, val]) => {
+        rows.push(`${plant};${param};${val.min};${val.max}`);
+      });
+    });
+    const csv = rows.join("\n");
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "plant_bounds.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  const handleImportPlantBoundsCSV = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split("\n").slice(1);
+      const newPlantBornes: any = { ...plantBornes };
+      lines.forEach((line) => {
+        const [plant, param, min, max] = line.split(";");
+        if (plant && param && min !== undefined && max !== undefined) {
+          const key = plant as keyof typeof newPlantBornes;
+          if (!newPlantBornes[key]) {
+            newPlantBornes[key] = {};
+          }
+          newPlantBornes[key][param] = {
+            min: parseFloat(min),
+            max: parseFloat(max),
+          };
+        }
+      });
+      setPlantBornes(newPlantBornes);
+      alert("Bornes importées avec succès !");
+    };
+    reader.readAsText(file, "UTF-8");
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -819,7 +779,7 @@ function App() {
                   )}
                   <span className="text-xs text-gray-500 mt-1">
                     Intervalle recommandé : {BORNES.oxygenBac.min} -{" "}
-                    {BORNES.oxygenBac.max} %
+                    {BORNES.oxygenBac.max}
                   </span>
                 </div>
                 {/* Niveau d'eau du bac du système */}
@@ -839,370 +799,74 @@ function App() {
           </div>
         ) : activeTab === "Graphiques" ? (
           <div className="flex flex-col gap-10">
+            <ChartTimeSelector
+              selectedHours={selectedHours}
+              setSelectedHours={setSelectedHours}
+            />
             {/* Formulaire d'ajout d'événement */}
-            <form
+            <EventForm
+              eventText={eventText}
+              setEventText={setEventText}
+              eventTime={eventTime}
+              setEventTime={setEventTime}
+              eventCategoryGroup={eventCategoryGroup}
+              setEventCategoryGroup={setEventCategoryGroup}
+              setEventCategories={setEventCategories}
+              chartList={chartList}
               onSubmit={handleAddEvent}
-              className="mb-6 bg-white rounded-lg shadow p-4 border border-gray-300 flex flex-col md:flex-row md:items-end gap-4"
-            >
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">
-                  Texte de l'événement
-                </label>
-                <input
-                  type="text"
-                  className="border rounded px-2 py-1"
-                  value={eventText}
-                  onChange={(e) => setEventText(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">
-                  Date/heure
-                </label>
-                <input
-                  type="datetime-local"
-                  className="border rounded px-2 py-1"
-                  value={eventTime}
-                  onChange={(e) => setEventTime(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">
-                  Catégories
-                </label>
-                <select
-                  className="border rounded px-2 py-1"
-                  value={eventCategoryGroup}
-                  onChange={e => {
-                    const val = e.target.value;
-                    setEventCategoryGroup(val);
-                    if (val === "all") {
-                      setEventCategories(chartList.map(c => c.key));
-                    } else if (val === "ambiance") {
-                      setEventCategories(["temperature", "humidity"]);
-                    } else if (val === "reservoir") {
-                      setEventCategories([
-                        "phReservoir",
-                        "oxygenReservoir",
-                        "ecReservoir",
-                        "waterLevelReservoir"
-                      ]);
-                    } else if (val === "bac") {
-                      setEventCategories([
-                        "phBac",
-                        "oxygenBac",
-                        "ecBac",
-                        "waterLevelBac"
-                      ]);
-                    } else {
-                      setEventCategories([]);
-                    }
-                  }}
-                  required
-                >
-                  <option value="">Sélectionner…</option>
-                  <option value="all">Tout</option>
-                  <option value="ambiance">Ambiance</option>
-                  <option value="reservoir">Réservoir</option>
-                  <option value="bac">Bac</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
-              >
-                Ajouter événement
-              </button>
-            </form>
+            />
             {/* Liste des événements existants avec suppression */}
-            {events.length > 0 && (
-              <div className="mb-6 bg-gray-50 rounded-lg shadow p-4 border border-gray-200">
-                <h3 className="text-base font-semibold text-gray-700 mb-2">
-                  Événements ajoutés
-                </h3>
-                <ul className="space-y-2">
-                  {events.map((ev) => (
-                    <li
-                      key={ev.id}
-                      className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 bg-white rounded p-2 border border-gray-200"
-                    >
-                      <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2">
-                        <span className="font-medium text-gray-800">
-                          {ev.text}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(ev.time).toLocaleString()}
-                        </span>
-                        <span className="text-xs text-gray-600">
-                          {ev.categories.map((cat) => {
-                            const chart = chartList.find((c) => c.key === cat);
-                            return chart ? (
-                              <span
-                                key={cat}
-                                className="inline-block bg-green-100 text-green-800 rounded px-2 py-0.5 mr-1 text-xs"
-                              >
-                                {chart.label}
-                              </span>
-                            ) : null;
-                          })}
-                        </span>
-                      </div>
-                      <button
-                        title="Supprimer l'événement"
-                        className="text-red-600 hover:text-red-800 text-xl px-2"
-                        onClick={() =>
-                          setEvents((prev) =>
-                            prev.filter((e) => e.id !== ev.id)
-                          )
-                        }
-                        aria-label="Supprimer"
-                      >
-                        🗑️
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {/* Section Ambiance */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-700 mb-3">Ambiance</h2>
-              <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between border border-gray-300">
-                <div className="flex items-center gap-2 mb-2 md:mb-0">
-                  {[3, 6, 12, 24].map((hours) => (
-                    <button
-                      key={hours}
-                      className={`px-3 py-1 border border-gray-400 rounded bg-gray-100 font-semibold ${
-                        selectedHours === hours ? "bg-green-500 text-white" : ""
-                      }`}
-                      onClick={() => handleHoursChange(hours)}
-                    >
-                      {hours} heures
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="mr-2 text-gray-700">
-                    Sélection des graphiques
-                  </span>
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-sm"
-                    checked={selectCharts}
-                    onChange={() => setSelectCharts((v) => !v)}
-                  />
-                  <button
-                    className="ml-4 px-4 py-1 bg-white border-2 border-black shadow text-black font-semibold hover:bg-gray-100 disabled:opacity-50"
-                    disabled={!selectCharts || selectedCharts.length === 0}
-                    onClick={handleExportCSV}
-                  >
-                    Exporter en CSV
-                  </button>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {["temperature", "humidity"].map((key) => {
-                  const chart = chartList.find((c) => c.key === key)!;
-                  const chartData = getChartData(
-                    chart.dataKey as any,
-                    chart.label,
-                    chart.color
-                  );
-                  return (
-                    <div
-                      key={chart.key}
-                      className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative"
-                    >
-                      {selectCharts && (
-                        <input
-                          type="checkbox"
-                          className="absolute top-2 right-2 w-5 h-5"
-                          checked={selectedCharts.includes(chart.key)}
-                          onChange={() => handleChartSelect(chart.key)}
-                        />
-                      )}
-                      <h2 className="text-base font-semibold text-gray-800 mb-2">
-                        Évolution de {chart.label}
-                      </h2>
-                      {chartData && (
-                        <div style={{ position: "relative" }}>
-                          <Line
-                            ref={(el) => {
-                              if (el) chartRefs.current[chart.key] = el;
-                            }}
-                            data={chartData}
-                            options={getChartOptionsWithBounds(
-                              chart.dataKey as any,
-                              chart.label,
-                              chart.color,
-                              chart.key
-                            )}
-                            redraw={false}
-                          />
-                          {chartRefs.current[chart.key]?.scales?.x && (
-                            <EventBadgeOverlay
-                              events={events
-                                .filter((ev) =>
-                                  ev.categories.includes(chart.key)
-                                )
-                                .map((ev) => ({
-                                  time: ev.time,
-                                  text: ev.text,
-                                }))}
-                              chartRef={{
-                                current: chartRefs.current[chart.key].canvas,
-                              }}
-                              xScale={chartRefs.current[chart.key].scales.x}
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            {/* Section Réservoir */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">
-                Réservoir
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                  "phReservoir",
-                  "oxygenReservoir",
-                  "ecReservoir",
-                  "waterLevelReservoir",
-                ].map((key) => {
-                  const chart = chartList.find((c) => c.key === key)!;
-                  const chartData = getChartData(
-                    chart.dataKey as any,
-                    chart.label,
-                    chart.color
-                  );
-                  return (
-                    <div
-                      key={chart.key}
-                      className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative"
-                    >
-                      {selectCharts && (
-                        <input
-                          type="checkbox"
-                          className="absolute top-2 right-2 w-5 h-5"
-                          checked={selectedCharts.includes(chart.key)}
-                          onChange={() => handleChartSelect(chart.key)}
-                        />
-                      )}
-                      <h2 className="text-base font-semibold text-gray-800 mb-2">
-                        Évolution de {chart.label}
-                      </h2>
-                      {chartData && (
-                        <div style={{ position: "relative" }}>
-                          <Line
-                            ref={(el) => {
-                              if (el) chartRefs.current[chart.key] = el;
-                            }}
-                            data={chartData}
-                            options={getChartOptionsWithBounds(
-                              chart.dataKey as any,
-                              chart.label,
-                              chart.color,
-                              chart.key
-                            )}
-                            redraw={false}
-                          />
-                          {chartRefs.current[chart.key]?.scales?.x && (
-                            <EventBadgeOverlay
-                              events={events
-                                .filter((ev) =>
-                                  ev.categories.includes(chart.key)
-                                )
-                                .map((ev) => ({
-                                  time: ev.time,
-                                  text: ev.text,
-                                }))}
-                              chartRef={{
-                                current: chartRefs.current[chart.key].canvas,
-                              }}
-                              xScale={chartRefs.current[chart.key].scales.x}
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            {/* Section Bac du système */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">
-                Bac du système
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {["phBac", "oxygenBac", "ecBac", "waterLevelBac"].map((key) => {
-                  const chart = chartList.find((c) => c.key === key)!;
-                  const chartData = getChartData(
-                    chart.dataKey as any,
-                    chart.label,
-                    chart.color
-                  );
-                  return (
-                    chartData && (
-                      <div
-                        key={chart.key}
-                        className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative"
-                      >
-                        {selectCharts && (
-                          <input
-                            type="checkbox"
-                            className="absolute top-2 right-2 w-5 h-5"
-                            checked={selectedCharts.includes(chart.key)}
-                            onChange={() => handleChartSelect(chart.key)}
-                          />
-                        )}
-                        <h2 className="text-base font-semibold text-gray-800 mb-2">
-                          Évolution de {chart.label}
-                        </h2>
-                        <div style={{ position: "relative" }}>
-                          <Line
-                            ref={(el) => {
-                              if (el) chartRefs.current[chart.key] = el;
-                            }}
-                            data={chartData}
-                            options={getChartOptionsWithBounds(
-                              chart.dataKey as any,
-                              chart.label,
-                              chart.color,
-                              chart.key
-                            )}
-                            redraw={false}
-                          />
-                          {chartRefs.current[chart.key]?.scales?.x && (
-                            <EventBadgeOverlay
-                              events={events
-                                .filter((ev) =>
-                                  ev.categories.includes(chart.key)
-                                )
-                                .map((ev) => ({
-                                  time: ev.time,
-                                  text: ev.text,
-                                }))}
-                              chartRef={{
-                                current: chartRefs.current[chart.key].canvas,
-                              }}
-                              xScale={chartRefs.current[chart.key].scales.x}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    )
-                  );
-                })}
-              </div>
-            </div>
+            <EventList
+              events={events}
+              chartList={chartList}
+              onDelete={(id) =>
+                setEvents((prev) => prev.filter((e) => e.id !== id))
+              }
+            />
+            <ChartSection
+              title="Ambiance"
+              chartKeys={["temperature", "humidity"]}
+              chartList={chartList}
+              getChartData={getChartData}
+              getChartOptionsWithBounds={getChartOptionsWithBounds}
+              selectCharts={false}
+              selectedCharts={selectedCharts}
+              handleChartSelect={handleChartSelect}
+              chartRefs={chartRefs}
+              events={events}
+              EventBadgeOverlay={EventBadgeOverlay}
+            />
+            <ChartSection
+              title="Réservoir"
+              chartKeys={[
+                "phReservoir",
+                "oxygenReservoir",
+                "ecReservoir",
+                "waterLevelReservoir",
+              ]}
+              chartList={chartList}
+              getChartData={getChartData}
+              getChartOptionsWithBounds={getChartOptionsWithBounds}
+              selectCharts={false}
+              selectedCharts={selectedCharts}
+              handleChartSelect={handleChartSelect}
+              chartRefs={chartRefs}
+              events={events}
+              EventBadgeOverlay={EventBadgeOverlay}
+            />
+            <ChartSection
+              title="Bac du système"
+              chartKeys={["phBac", "oxygenBac", "ecBac", "waterLevelBac"]}
+              chartList={chartList}
+              getChartData={getChartData}
+              getChartOptionsWithBounds={getChartOptionsWithBounds}
+              selectCharts={false}
+              selectedCharts={selectedCharts}
+              handleChartSelect={handleChartSelect}
+              chartRefs={chartRefs}
+              events={events}
+              EventBadgeOverlay={EventBadgeOverlay}
+            />
           </div>
         ) : activeTab === "Commandes" ? (
           <div className="flex flex-col gap-8">
@@ -1221,11 +885,15 @@ function App() {
                       <select
                         className="border rounded px-2 py-1 w-full"
                         value={selectedPlant}
-                        onChange={e => setSelectedPlant(e.target.value as PlantKey)}
+                        onChange={(e) =>
+                          setSelectedPlant(e.target.value as PlantKey)
+                        }
                       >
                         <option value="">-- Choisir une plante --</option>
                         {Object.keys(plantBornes).map((plant) => (
-                          <option key={plant} value={plant}>{plant.charAt(0).toUpperCase() + plant.slice(1)}</option>
+                          <option key={plant} value={plant}>
+                            {plant.charAt(0).toUpperCase() + plant.slice(1)}
+                          </option>
                         ))}
                       </select>
                       <button
@@ -1309,49 +977,52 @@ function App() {
                   }}
                 >
                   {Object.entries(editableBornes)
-  .filter(([key]) => key !== "waterLevelReservoir" && key !== "waterLevelBac")
-  .map(([key, val]) => {
-    const typedKey = key as keyof typeof editableBornes;
-    return (
-      <div key={key} className="flex items-center gap-2">
-        <span className="w-48 font-medium text-gray-700">
-          {PARAM_LABELS[key] || key}
-        </span>
-        <label className="text-sm">Min</label>
-        <input
-          type="number"
-          step="any"
-          className="border rounded px-2 py-1 w-20"
-          value={val.min}
-          onChange={(e) =>
-            setEditableBornes((b) => ({
-              ...b,
-              [typedKey]: {
-                ...b[typedKey],
-                min: parseFloat(e.target.value),
-              },
-            }))
-          }
-        />
-        <label className="text-sm">Max</label>
-        <input
-          type="number"
-          step="any"
-          className="border rounded px-2 py-1 w-20"
-          value={val.max}
-          onChange={(e) =>
-            setEditableBornes((b) => ({
-              ...b,
-              [typedKey]: {
-                ...b[typedKey],
-                max: parseFloat(e.target.value),
-              },
-            }))
-          }
-        />
-      </div>
-    );
-  })}
+                    .filter(
+                      ([key]) =>
+                        key !== "waterLevelReservoir" && key !== "waterLevelBac"
+                    )
+                    .map(([key, val]) => {
+                      const typedKey = key as keyof typeof editableBornes;
+                      return (
+                        <div key={key} className="flex items-center gap-2">
+                          <span className="w-48 font-medium text-gray-700">
+                            {PARAM_LABELS[key] || key}
+                          </span>
+                          <label className="text-sm">Min</label>
+                          <input
+                            type="number"
+                            step="any"
+                            className="border rounded px-2 py-1 w-20"
+                            value={val.min}
+                            onChange={(e) =>
+                              setEditableBornes((b) => ({
+                                ...b,
+                                [typedKey]: {
+                                  ...b[typedKey],
+                                  min: parseFloat(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                          <label className="text-sm">Max</label>
+                          <input
+                            type="number"
+                            step="any"
+                            className="border rounded px-2 py-1 w-20"
+                            value={val.max}
+                            onChange={(e) =>
+                              setEditableBornes((b) => ({
+                                ...b,
+                                [typedKey]: {
+                                  ...b[typedKey],
+                                  max: parseFloat(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                      );
+                    })}
                   <button
                     type="button"
                     className="mt-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700 self-end"
@@ -1361,152 +1032,55 @@ function App() {
                           ...prev,
                           [selectedPlant]: { ...editableBornes },
                         }));
-                        alert('Bornes enregistrées pour la plante sélectionnée !');
+                        alert(
+                          "Bornes enregistrées pour la plante sélectionnée !"
+                        );
                       }
                     }}
                   >
                     Enregistrer
                   </button>
                 </form>
-                <div className="flex gap-4 mt-6 justify-end">
-                  <button
-                    className="px-4 py-2 bg-green-100 text-green-800 border border-green-600 rounded font-semibold hover:bg-green-200"
-                    onClick={handleExportPlantBoundsCSV}
-                  >
-                    Exporter les bornes plantes en CSV
-                  </button>
-                  <label className="px-4 py-2 bg-white text-blue-800 border border-blue-600 rounded font-semibold hover:bg-blue-50 cursor-pointer">
-                    Importer un CSV bornes plantes
-                    <input
-                      type="file"
-                      accept=".csv"
-                      className="hidden"
-                      onChange={handleImportPlantBoundsCSV}
-                    />
-                  </label>
-                </div>
+                <PlantBoundsCSVButtons
+                  plantBornes={plantBornes}
+                  setPlantBornes={setPlantBornes}
+                  selectedPlant={selectedPlant}
+                  setEditableBornes={setEditableBornes}
+                />
               </div>
             </div>
             {/* Modal d'ajout de plante */}
-            {showAddPlantModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg shadow-lg p-8 min-w-[350px] max-w-lg w-full relative">
-                  <button
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
-                    onClick={() => setShowAddPlantModal(false)}
-                    title="Fermer"
-                  >
-                    ×
-                  </button>
-                  <h2 className="text-lg font-bold mb-4">Ajouter une nouvelle plante</h2>
-                  <form
-                    onSubmit={e => {
-                      e.preventDefault();
-                      const name = newPlantName.trim().toLowerCase();
-                      if (!name) {
-                        alert("Veuillez saisir un nom de plante.");
-                        return;
-                      }
-                      if (plantBornes[name]) {
-                        alert("Cette plante existe déjà.");
-                        return;
-                      }
-                      setPlantBornes((prev: any) => ({
-                        ...prev,
-                        [name]: { ...newPlantBornes },
-                      }));
-                      setSelectedPlant(name as PlantKey);
-                      setEditableBornes({ ...newPlantBornes });
-                      setShowAddPlantModal(false);
-                    }}
-                    className="flex flex-col gap-4"
-                  >
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la plante</label>
-                      <input
-                        type="text"
-                        className="border rounded px-2 py-1 w-full"
-                        value={newPlantName}
-                        onChange={e => setNewPlantName(e.target.value)}
-                        required
-                      />
-                    </div>
-                    {Object.entries(newPlantBornes)
-  .filter(([key]) => key !== "waterLevelReservoir" && key !== "waterLevelBac")
-  .map(([key, val]) => {
-    const v = val as { min: number; max: number };
-    return (
-      <div key={key} className="flex items-center gap-2">
-        <span className="w-48 font-medium text-gray-700">{PARAM_LABELS[key] || key}</span>
-        <label className="text-sm">Min</label>
-        <input
-          type="number"
-          step="any"
-          className="border rounded px-2 py-1 w-20"
-          value={v.min}
-          onChange={e => setNewPlantBornes((b: any) => ({
-            ...b,
-            [key]: { ...b[key], min: parseFloat(e.target.value) },
-          }))}
-          required
-        />
-        <label className="text-sm">Max</label>
-        <input
-          type="number"
-          step="any"
-          className="border rounded px-2 py-1 w-20"
-          value={v.max}
-          onChange={e => setNewPlantBornes((b: any) => ({
-            ...b,
-            [key]: { ...b[key], max: parseFloat(e.target.value) },
-          }))}
-          required
-        />
-      </div>
-    );
-  })}
-                    <button
-                      type="submit"
-                      className="mt-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700 self-end"
-                    >
-                      Ajouter la plante
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
+            <AddPlantModal
+              show={showAddPlantModal}
+              onClose={() => setShowAddPlantModal(false)}
+              plantName={newPlantName}
+              setPlantName={setNewPlantName}
+              plantBornes={newPlantBornes}
+              setPlantBornes={setNewPlantBornes}
+              paramLabels={PARAM_LABELS}
+              onSubmit={() => {
+                const name = newPlantName.trim().toLowerCase();
+                if (!name) {
+                  alert("Veuillez saisir un nom de plante.");
+                  return;
+                }
+                if (plantBornes[name]) {
+                  alert("Cette plante existe déjà.");
+                  return;
+                }
+                setPlantBornes((prev: any) => ({
+                  ...prev,
+                  [name]: { ...newPlantBornes },
+                }));
+                setNewPlantName("");
+                setShowAddPlantModal(false);
+              }}
+            />
+            {/* InfoBox d'implémentation */}
+            <InfoBox />
           </div>
         ) : null}
-        {/* Information Box */}
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-400 mt-6">
-          <h3 className="text-lg font-medium text-yellow-800 mb-2">
-            Note pour l'implémentation
-          </h3>
-          <div className="text-sm text-yellow-700">
-            <p>
-              On utilise actuellement des données simulées. Pour connecter vos
-              capteurs réels, on doit:
-            </p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>
-                Modifier le backend (server.js) pour recevoir les données des
-                capteurs physiques
-              </li>
-              <li>
-                Adapter le format des données selon nos capteurs spécifiques
-              </li>
-              <li>
-                Ajuster les plages de valeurs et les unités si besoin, à voir
-              </li>
-            </ul>
-          </div>
-        </div>
       </main>
-      <footer className="bg-gray-800 text-white py-4 mt-8">
-        <div className="container mx-auto px-6 text-center">
-          <p>© {new Date().getFullYear()} Projet Hydroponie</p>
-        </div>
-      </footer>
     </div>
   );
 }
