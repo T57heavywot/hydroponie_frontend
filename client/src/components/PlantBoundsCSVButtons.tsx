@@ -19,9 +19,7 @@ const PlantBoundsCSVButtons: React.FC<PlantBoundsCSVButtonsProps> = ({
   const handleExport = () => {
     const rows = ["Plant;Parameter;Min;Max"];
     Object.entries(plantBornes).forEach(([plant, params]) => {
-      Object.entries(
-        params as { [key: string]: { min: number; max: number } }
-      )
+      Object.entries(params as { [key: string]: { min: number; max: number } })
         .filter(([param]) => !EXCLUDED_PARAMS.includes(param))
         .forEach(([param, val]) => {
           rows.push(`${plant};${param};${val.min};${val.max}`);
