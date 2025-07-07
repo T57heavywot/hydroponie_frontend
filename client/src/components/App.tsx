@@ -68,6 +68,8 @@ function App() {
   const [eventText, setEventText] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [eventCategories, setEventCategories] = useState<string[]>([]);
+  // Ajout d'un état pour le groupe de catégories sélectionné
+  const [eventCategoryGroup, setEventCategoryGroup] = useState("");
 
   const BORNES = {
     phReservoir: { min: 5.5, max: 6.5 },
@@ -441,6 +443,7 @@ function App() {
     setEventText("");
     setEventTime("");
     setEventCategories([]);
+    setEventCategoryGroup("");
   };
 
   // Met à jour les bornes selon la plante sélectionnée
@@ -854,28 +857,42 @@ function App() {
                 <label className="text-sm font-medium text-gray-700 mb-1">
                   Catégories
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {chartList.map((chart) => (
-                    <label
-                      key={chart.key}
-                      className="flex items-center gap-1 text-xs"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={eventCategories.includes(chart.key)}
-                        onChange={(e) => {
-                          if (e.target.checked)
-                            setEventCategories((prev) => [...prev, chart.key]);
-                          else
-                            setEventCategories((prev) =>
-                              prev.filter((k) => k !== chart.key)
-                            );
-                        }}
-                      />
-                      {chart.label}
-                    </label>
-                  ))}
-                </div>
+                <select
+                  className="border rounded px-2 py-1"
+                  value={eventCategoryGroup}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setEventCategoryGroup(val);
+                    if (val === "all") {
+                      setEventCategories(chartList.map(c => c.key));
+                    } else if (val === "ambiance") {
+                      setEventCategories(["temperature", "humidity"]);
+                    } else if (val === "reservoir") {
+                      setEventCategories([
+                        "phReservoir",
+                        "oxygenReservoir",
+                        "ecReservoir",
+                        "waterLevelReservoir"
+                      ]);
+                    } else if (val === "bac") {
+                      setEventCategories([
+                        "phBac",
+                        "oxygenBac",
+                        "ecBac",
+                        "waterLevelBac"
+                      ]);
+                    } else {
+                      setEventCategories([]);
+                    }
+                  }}
+                  required
+                >
+                  <option value="">Sélectionner…</option>
+                  <option value="all">Tout</option>
+                  <option value="ambiance">Ambiance</option>
+                  <option value="reservoir">Réservoir</option>
+                  <option value="bac">Bac</option>
+                </select>
               </div>
               <button
                 type="submit"
