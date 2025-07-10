@@ -23,6 +23,9 @@ import ChartSection from "./ChartSection";
 import PlantBoundsCSVButtons from "./PlantBoundsCSVButtons";
 import InfoBox from "./InfoBox";
 import ChartTimeSelector from "./ChartTimeSelector";
+import AmbianceSection from "./AmbianceSection";
+import ReservoirSection from "./ReservoirSection";
+import BacSection from "./BacSection";
 
 ChartJS.register(
   CategoryScale,
@@ -548,246 +551,27 @@ function App() {
         {activeTab === "Accueil" ? (
           <div className="flex flex-col gap-8">
             {/* Groupe Ambiance */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-700 mb-3">Ambiance</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Température ambiante */}
-                <div className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow p-6 flex flex-col items-center border border-sky-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-sky-900 mb-1">
-                    Température ambiante
-                  </h3>
-                  <span className="text-3xl font-extrabold text-sky-600 mb-1">
-                    {latestData
-                      ? latestData.temperature.toFixed(1) + " °C"
-                      : "--"}
-                  </span>
-                  <span className="text-xs text-sky-400">Dernière mesure</span>
-                  {latestData && (
-                    <GaugeBar
-                      min={0}
-                      max={40}
-                      value={latestData.temperature}
-                      optimalMin={editableBornes.temperature.min}
-                      optimalMax={editableBornes.temperature.max}
-                      unit="°C"
-                    />
-                  )}
-                  <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {editableBornes.temperature.min} - {editableBornes.temperature.max} °C
-                  </span>
-                </div>
-                {/* Humidité ambiante */}
-                <div className="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow p-6 flex flex-col items-center border border-violet-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-violet-900 mb-1">
-                    Humidité ambiante
-                  </h3>
-                  <span className="text-3xl font-extrabold text-violet-600 mb-1">
-                    {latestData ? latestData.humidity.toFixed(1) + " %" : "--"}
-                  </span>
-                  <span className="text-xs text-violet-400">
-                    Dernière mesure
-                  </span>
-                  {latestData && (
-                    <GaugeBar
-                      min={0}
-                      max={100}
-                      value={latestData.humidity}
-                      optimalMin={editableBornes.humidity.min}
-                      optimalMax={editableBornes.humidity.max}
-                      unit="%"
-                    />
-                  )}
-                  <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {editableBornes.humidity.min} - {editableBornes.humidity.max} %
-                  </span>
-                </div>
-              </div>
-            </div>
+            <AmbianceSection latestData={latestData && { temperature: latestData.temperature, humidity: latestData.humidity }} editableBornes={editableBornes} />
             {/* Groupe Réservoir */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">
-                Réservoir
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* Conductivité réservoir */}
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow p-6 flex flex-col items-center border border-purple-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-purple-900 mb-1">
-                    Conductivité
-                  </h3>
-                  <span className="text-3xl font-extrabold text-purple-600 mb-1">
-                    {latestData
-                      ? latestData.ecReservoir.toFixed(2) + " mS/cm"
-                      : "--"}
-                  </span>
-                  <span className="text-xs text-purple-400">
-                    Dernière mesure
-                  </span>
-                  {latestData && (
-                    <GaugeBar
-                      min={0}
-                      max={3}
-                      value={latestData.ecReservoir}
-                      optimalMin={editableBornes.ecReservoir.min}
-                      optimalMax={editableBornes.ecReservoir.max}
-                      unit="mS/cm"
-                    />
-                  )}
-                  <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {editableBornes.ecReservoir.min} - {editableBornes.ecReservoir.max} mS/cm
-                  </span>
-                </div>
-                {/* pH réservoir */}
-                <div className="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow p-6 flex flex-col items-center border border-fuchsia-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-fuchsia-900 mb-1">
-                    pH
-                  </h3>
-                  <span className="text-3xl font-extrabold text-fuchsia-600 mb-1">
-                    {latestData ? latestData.phReservoir.toFixed(2) : "--"}
-                  </span>
-                  <span className="text-xs text-fuchsia-400">
-                    Dernière mesure
-                  </span>
-                  {latestData && (
-                    <GaugeBar
-                      min={0}
-                      max={14}
-                      value={latestData.phReservoir}
-                      optimalMin={editableBornes.phReservoir.min}
-                      optimalMax={editableBornes.phReservoir.max}
-                      unit="pH"
-                    />
-                  )}
-                  <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {editableBornes.phReservoir.min} - {editableBornes.phReservoir.max}
-                  </span>
-                </div>
-                {/* Oxygène réservoir */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-blue-900 mb-1">
-                    Oxygène dissous
-                  </h3>
-                  <span className="text-3xl font-extrabold text-blue-600 mb-1">
-                    {latestData
-                      ? latestData.oxygenReservoir.toFixed(1) + " %"
-                      : "--"}
-                  </span>
-                  <span className="text-xs text-blue-400">Dernière mesure</span>
-                  {latestData && (
-                    <GaugeBar
-                      min={0}
-                      max={100}
-                      value={latestData.oxygenReservoir}
-                      optimalMin={editableBornes.oxygenReservoir.min}
-                      optimalMax={editableBornes.oxygenReservoir.max}
-                      unit="%"
-                    />
-                  )}
-                  <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {editableBornes.oxygenReservoir.min} - {editableBornes.oxygenReservoir.max} %
-                  </span>
-                </div>
-                {/* Niveau d'eau du réservoir */}
-                <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow p-6 flex flex-col items-center border border-cyan-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-cyan-900 mb-1">
-                    Niveau d'eau
-                  </h3>
-                  <WaterLevel level={waterLevel.level} />
-                </div>
-              </div>
-            </div>
+            <ReservoirSection
+              latestData={latestData && {
+                ecReservoir: latestData.ecReservoir,
+                phReservoir: latestData.phReservoir,
+                oxygenReservoir: latestData.oxygenReservoir
+              }}
+              waterLevel={waterLevel}
+              editableBornes={editableBornes}
+            />
             {/* Groupe Bac du système */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-700 mb-3 mt-2">
-                Bac du système
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* Conductivité bac */}
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow p-6 flex flex-col items-center border border-purple-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-purple-900 mb-1">
-                    Conductivité
-                  </h3>
-                  <span className="text-3xl font-extrabold text-purple-600 mb-1">
-                    {latestData ? latestData.ecBac.toFixed(2) + " mS/cm" : "--"}
-                  </span>
-                  <span className="text-xs text-purple-400">
-                    Dernière mesure
-                  </span>
-                  {latestData && (
-                    <GaugeBar
-                      min={0}
-                      max={3}
-                      value={latestData.ecBac}
-                      optimalMin={editableBornes.ecBac.min}
-                      optimalMax={editableBornes.ecBac.max}
-                      unit="mS/cm"
-                    />
-                  )}
-                  <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {editableBornes.ecBac.min} - {editableBornes.ecBac.max} mS/cm
-                  </span>
-                </div>
-                {/* pH bac */}
-                <div className="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow p-6 flex flex-col items-center border border-fuchsia-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-fuchsia-900 mb-1">
-                    pH
-                  </h3>
-                  <span className="text-3xl font-extrabold text-fuchsia-600 mb-1">
-                    {latestData ? latestData.phBac.toFixed(2) : "--"}
-                  </span>
-                  <span className="text-xs text-fuchsia-400">
-                    Dernière mesure
-                  </span>
-                  {latestData && (
-                    <GaugeBar
-                      min={0}
-                      max={14}
-                      value={latestData.phBac}
-                      optimalMin={editableBornes.phBac.min}
-                      optimalMax={editableBornes.phBac.max}
-                      unit="pH"
-                    />
-                  )}
-                  <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {editableBornes.phBac.min} - {editableBornes.phBac.max}
-                  </span>
-                </div>
-                {/* Oxygène bac */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-blue-900 mb-1">
-                    Oxygène dissous
-                  </h3>
-                  <span className="text-3xl font-extrabold text-blue-600 mb-1">
-                    {latestData ? latestData.oxygenBac.toFixed(1) + " %" : "--"}
-                  </span>
-                  <span className="text-xs text-blue-400">Dernière mesure</span>
-                  {latestData && (
-                    <GaugeBar
-                      min={0}
-                      max={100}
-                      value={latestData.oxygenBac}
-                      optimalMin={editableBornes.oxygenBac.min}
-                      optimalMax={editableBornes.oxygenBac.max}
-                      unit="%"
-                    />
-                  )}
-                  <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {editableBornes.oxygenBac.min} - {editableBornes.oxygenBac.max}
-                  </span>
-                </div>
-                {/* Niveau d'eau du bac du système */}
-                <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow p-6 flex flex-col items-center border border-rose-200 hover:shadow-lg transition">
-                  <h3 className="text-base font-semibold text-rose-900 mb-1">
-                    Niveau d'eau
-                  </h3>
-                  <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
-                  {waterLevel.level - 55 < 20 && (
-                    <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                      Niveau critique! Remplissez le réservoir dès que possible.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <BacSection
+              latestData={latestData && {
+                ecBac: latestData.ecBac,
+                phBac: latestData.phBac,
+                oxygenBac: latestData.oxygenBac
+              }}
+              waterLevel={waterLevel}
+              editableBornes={editableBornes}
+            />
           </div>
         ) : activeTab === "Graphiques" ? (
           <div className="flex flex-col gap-10">
