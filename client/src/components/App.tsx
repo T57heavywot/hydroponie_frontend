@@ -567,14 +567,13 @@ function App() {
                       min={0}
                       max={40}
                       value={latestData.temperature}
-                      optimalMin={BORNES.temperature.min}
-                      optimalMax={BORNES.temperature.max}
+                      optimalMin={editableBornes.temperature.min}
+                      optimalMax={editableBornes.temperature.max}
                       unit="°C"
                     />
                   )}
                   <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {BORNES.temperature.min} -{" "}
-                    {BORNES.temperature.max} °C
+                    Intervalle recommandé : {editableBornes.temperature.min} - {editableBornes.temperature.max} °C
                   </span>
                 </div>
                 {/* Humidité ambiante */}
@@ -593,14 +592,13 @@ function App() {
                       min={0}
                       max={100}
                       value={latestData.humidity}
-                      optimalMin={BORNES.humidity.min}
-                      optimalMax={BORNES.humidity.max}
+                      optimalMin={editableBornes.humidity.min}
+                      optimalMax={editableBornes.humidity.max}
                       unit="%"
                     />
                   )}
                   <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {BORNES.humidity.min} -{" "}
-                    {BORNES.humidity.max} %
+                    Intervalle recommandé : {editableBornes.humidity.min} - {editableBornes.humidity.max} %
                   </span>
                 </div>
               </div>
@@ -629,14 +627,13 @@ function App() {
                       min={0}
                       max={3}
                       value={latestData.ecReservoir}
-                      optimalMin={BORNES.ecReservoir.min}
-                      optimalMax={BORNES.ecReservoir.max}
+                      optimalMin={editableBornes.ecReservoir.min}
+                      optimalMax={editableBornes.ecReservoir.max}
                       unit="mS/cm"
                     />
                   )}
                   <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {BORNES.ecReservoir.min} -{" "}
-                    {BORNES.ecReservoir.max} mS/cm
+                    Intervalle recommandé : {editableBornes.ecReservoir.min} - {editableBornes.ecReservoir.max} mS/cm
                   </span>
                 </div>
                 {/* pH réservoir */}
@@ -655,14 +652,13 @@ function App() {
                       min={0}
                       max={14}
                       value={latestData.phReservoir}
-                      optimalMin={BORNES.phReservoir.min}
-                      optimalMax={BORNES.phReservoir.max}
+                      optimalMin={editableBornes.phReservoir.min}
+                      optimalMax={editableBornes.phReservoir.max}
                       unit="pH"
                     />
                   )}
                   <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {BORNES.phReservoir.min} -{" "}
-                    {BORNES.phReservoir.max}
+                    Intervalle recommandé : {editableBornes.phReservoir.min} - {editableBornes.phReservoir.max}
                   </span>
                 </div>
                 {/* Oxygène réservoir */}
@@ -681,14 +677,13 @@ function App() {
                       min={0}
                       max={100}
                       value={latestData.oxygenReservoir}
-                      optimalMin={BORNES.oxygenReservoir.min}
-                      optimalMax={BORNES.oxygenReservoir.max}
+                      optimalMin={editableBornes.oxygenReservoir.min}
+                      optimalMax={editableBornes.oxygenReservoir.max}
                       unit="%"
                     />
                   )}
                   <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {BORNES.oxygenReservoir.min} -{" "}
-                    {BORNES.oxygenReservoir.max} %
+                    Intervalle recommandé : {editableBornes.oxygenReservoir.min} - {editableBornes.oxygenReservoir.max} %
                   </span>
                 </div>
                 {/* Niveau d'eau du réservoir */}
@@ -722,14 +717,13 @@ function App() {
                       min={0}
                       max={3}
                       value={latestData.ecBac}
-                      optimalMin={BORNES.ecBac.min}
-                      optimalMax={BORNES.ecBac.max}
+                      optimalMin={editableBornes.ecBac.min}
+                      optimalMax={editableBornes.ecBac.max}
                       unit="mS/cm"
                     />
                   )}
                   <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {BORNES.ecBac.min} -{" "}
-                    {BORNES.ecBac.max} mS/cm
+                    Intervalle recommandé : {editableBornes.ecBac.min} - {editableBornes.ecBac.max} mS/cm
                   </span>
                 </div>
                 {/* pH bac */}
@@ -748,14 +742,13 @@ function App() {
                       min={0}
                       max={14}
                       value={latestData.phBac}
-                      optimalMin={BORNES.phBac.min}
-                      optimalMax={BORNES.phBac.max}
+                      optimalMin={editableBornes.phBac.min}
+                      optimalMax={editableBornes.phBac.max}
                       unit="pH"
                     />
                   )}
                   <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {BORNES.phBac.min} -{" "}
-                    {BORNES.phBac.max}
+                    Intervalle recommandé : {editableBornes.phBac.min} - {editableBornes.phBac.max}
                   </span>
                 </div>
                 {/* Oxygène bac */}
@@ -772,14 +765,13 @@ function App() {
                       min={0}
                       max={100}
                       value={latestData.oxygenBac}
-                      optimalMin={BORNES.oxygenBac.min}
-                      optimalMax={BORNES.oxygenBac.max}
+                      optimalMin={editableBornes.oxygenBac.min}
+                      optimalMax={editableBornes.oxygenBac.max}
                       unit="%"
                     />
                   )}
                   <span className="text-xs text-gray-500 mt-1">
-                    Intervalle recommandé : {BORNES.oxygenBac.min} -{" "}
-                    {BORNES.oxygenBac.max}
+                    Intervalle recommandé : {editableBornes.oxygenBac.min} - {editableBornes.oxygenBac.max}
                   </span>
                 </div>
                 {/* Niveau d'eau du bac du système */}
