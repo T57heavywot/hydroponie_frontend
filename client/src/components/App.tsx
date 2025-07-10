@@ -26,6 +26,9 @@ import ChartTimeSelector from "./ChartTimeSelector";
 import AmbianceSection from "./AmbianceSection";
 import ReservoirSection from "./ReservoirSection";
 import BacSection from "./BacSection";
+import GraphiquesTab from "./GraphiquesTab";
+import TabNavigation from "./TabNavigation";
+import EditPlantBoundsForm from "./EditPlantBoundsForm";
 
 ChartJS.register(
   CategoryScale,
@@ -519,6 +522,31 @@ function App() {
     reader.readAsText(file, "UTF-8");
   };
 
+  // Interface des props pour GraphiquesTab
+  interface GraphiquesTabProps {
+    selectedHours: number;
+    setSelectedHours: React.Dispatch<React.SetStateAction<number>>;
+    eventText: string;
+    setEventText: React.Dispatch<React.SetStateAction<string>>;
+    eventTime: string;
+    setEventTime: React.Dispatch<React.SetStateAction<string>>;
+    eventCategoryGroup: string;
+    setEventCategoryGroup: React.Dispatch<React.SetStateAction<string>>;
+    eventCategories: string[];
+    setEventCategories: React.Dispatch<React.SetStateAction<string[]>>;
+    chartList: any[];
+    handleAddEvent: (e: React.FormEvent) => void;
+    events: any[];
+    setEvents: React.Dispatch<React.SetStateAction<any[]>>;
+    selectedCharts: string[];
+    handleChartSelect: (key: string) => void;
+    chartRefs: React.MutableRefObject<Record<string, any>>;
+    getChartData: (dataKey: string, label: string, color: string) => any;
+    getChartOptionsWithBounds: (dataKey: string, label: string, color: string, category?: string) => any;
+    EventBadgeOverlay: any;
+  }
+
+  // --- ASSEMBLAGE PRINCIPAL DES COMPOSANTS ---
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -529,7 +557,7 @@ function App() {
           </h1>
         </div>
       </header>
-      {/* Onglets wireframe sous le header */}
+      {/* Navigation des onglets */}
       <nav className="bg-white border-b border-gray-300">
         <div className="container mx-auto px-6 flex space-x-2">
           {["Accueil", "Graphiques", "Commandes"].map((tab) => (
@@ -548,10 +576,14 @@ function App() {
         </div>
       </nav>
       <main className="container mx-auto py-8 px-6">
-        {activeTab === "Accueil" ? (
+        {/* --- ACCUEIL --- */}
+        {activeTab === "Accueil" && (
           <div className="flex flex-col gap-8">
             {/* Groupe Ambiance */}
-            <AmbianceSection latestData={latestData && { temperature: latestData.temperature, humidity: latestData.humidity }} editableBornes={editableBornes} />
+            <AmbianceSection
+              latestData={latestData && { temperature: latestData.temperature, humidity: latestData.humidity }}
+              editableBornes={editableBornes}
+            />
             {/* Groupe Réservoir */}
             <ReservoirSection
               latestData={latestData && {
@@ -573,78 +605,67 @@ function App() {
               editableBornes={editableBornes}
             />
           </div>
-        ) : activeTab === "Graphiques" ? (
-          <div className="flex flex-col gap-10">
-            <ChartTimeSelector
+        )}
+        {/* --- GRAPHIQUES --- */}
+        {activeTab === "Graphiques" && (
+          <div>
+            <button
+              className="mb-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
+              onClick={() => {
+                // Génération du CSV pour les données graphiques
+                const chartsToExport = selectedCharts.length > 0 ? selectedCharts : chartList.map(c => c.key);
+                const header = ["timestamp", ...chartsToExport];
+                const rows = [header.join(";")];
+                sensorData.forEach((data) => {
+                  const row = [
+                    data.timestamp,
+                    ...chartsToExport.map((key) => {
+                      const val = (data as any)[key];
+                      return typeof val === "number" ? val : "";
+                    })
+                  ];
+                  rows.push(row.join(";"));
+                });
+                const csv = rows.join("\n");
+                const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "donnees_graphiques.csv";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Exporter les données graphiques en CSV
+            </button>
+            <GraphiquesTab
               selectedHours={selectedHours}
               setSelectedHours={setSelectedHours}
-            />
-            {/* Formulaire d'ajout d'événement */}
-            <EventForm
               eventText={eventText}
               setEventText={setEventText}
               eventTime={eventTime}
               setEventTime={setEventTime}
               eventCategoryGroup={eventCategoryGroup}
               setEventCategoryGroup={setEventCategoryGroup}
+              eventCategories={eventCategories}
               setEventCategories={setEventCategories}
               chartList={chartList}
-              onSubmit={handleAddEvent}
-            />
-            {/* Liste des événements existants avec suppression */}
-            <EventList
+              handleAddEvent={handleAddEvent}
               events={events}
-              chartList={chartList}
-              onDelete={(id) =>
-                setEvents((prev) => prev.filter((e) => e.id !== id))
-              }
-            />
-            <ChartSection
-              title="Ambiance"
-              chartKeys={["temperature", "humidity"]}
-              chartList={chartList}
-              getChartData={getChartData}
-              getChartOptionsWithBounds={getChartOptionsWithBounds}
-              selectCharts={false}
+              setEvents={setEvents}
               selectedCharts={selectedCharts}
               handleChartSelect={handleChartSelect}
               chartRefs={chartRefs}
-              events={events}
-              EventBadgeOverlay={EventBadgeOverlay}
-            />
-            <ChartSection
-              title="Réservoir"
-              chartKeys={[
-                "phReservoir",
-                "oxygenReservoir",
-                "ecReservoir",
-                "waterLevelReservoir",
-              ]}
-              chartList={chartList}
               getChartData={getChartData}
               getChartOptionsWithBounds={getChartOptionsWithBounds}
-              selectCharts={false}
-              selectedCharts={selectedCharts}
-              handleChartSelect={handleChartSelect}
-              chartRefs={chartRefs}
-              events={events}
-              EventBadgeOverlay={EventBadgeOverlay}
-            />
-            <ChartSection
-              title="Bac du système"
-              chartKeys={["phBac", "oxygenBac", "ecBac", "waterLevelBac"]}
-              chartList={chartList}
-              getChartData={getChartData}
-              getChartOptionsWithBounds={getChartOptionsWithBounds}
-              selectCharts={false}
-              selectedCharts={selectedCharts}
-              handleChartSelect={handleChartSelect}
-              chartRefs={chartRefs}
-              events={events}
               EventBadgeOverlay={EventBadgeOverlay}
             />
           </div>
-        ) : activeTab === "Commandes" ? (
+        )}
+        {/* --- COMMANDES --- */}
+        {activeTab === "Commandes" && (
           <div className="flex flex-col gap-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Bloc Actions rapides avec sélecteur de plante */}
@@ -653,6 +674,7 @@ function App() {
                   <h2 className="text-xl font-bold text-gray-800 mb-2 text-center">
                     Actions rapides
                   </h2>
+                  {/* Sélecteur de plante */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Plante par défaut
@@ -697,6 +719,7 @@ function App() {
                       </button>
                     </div>
                   </div>
+                  {/* Actions rapides */}
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-gray-700">
@@ -855,7 +878,7 @@ function App() {
             {/* InfoBox d'implémentation */}
             <InfoBox />
           </div>
-        ) : null}
+        )}
       </main>
     </div>
   );
