@@ -608,61 +608,29 @@ function App() {
         )}
         {/* --- GRAPHIQUES --- */}
         {activeTab === "Graphiques" && (
-          <div>
-            <button
-              className="mb-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
-              onClick={() => {
-                // Génération du CSV pour les données graphiques
-                const chartsToExport = selectedCharts.length > 0 ? selectedCharts : chartList.map(c => c.key);
-                const header = ["timestamp", ...chartsToExport];
-                const rows = [header.join(";")];
-                sensorData.forEach((data) => {
-                  const row = [
-                    data.timestamp,
-                    ...chartsToExport.map((key) => {
-                      const val = (data as any)[key];
-                      return typeof val === "number" ? val : "";
-                    })
-                  ];
-                  rows.push(row.join(";"));
-                });
-                const csv = rows.join("\n");
-                const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "donnees_graphiques.csv";
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }}
-            >
-              Exporter les données graphiques en CSV
-            </button>
-            <GraphiquesTab
-              selectedHours={selectedHours}
-              setSelectedHours={setSelectedHours}
-              eventText={eventText}
-              setEventText={setEventText}
-              eventTime={eventTime}
-              setEventTime={setEventTime}
-              eventCategoryGroup={eventCategoryGroup}
-              setEventCategoryGroup={setEventCategoryGroup}
-              eventCategories={eventCategories}
-              setEventCategories={setEventCategories}
-              chartList={chartList}
-              handleAddEvent={handleAddEvent}
-              events={events}
-              setEvents={setEvents}
-              selectedCharts={selectedCharts}
-              handleChartSelect={handleChartSelect}
-              chartRefs={chartRefs}
-              getChartData={getChartData}
-              getChartOptionsWithBounds={getChartOptionsWithBounds}
-              EventBadgeOverlay={EventBadgeOverlay}
-            />
-          </div>
+          <GraphiquesTab
+            selectedHours={selectedHours}
+            setSelectedHours={setSelectedHours}
+            eventText={eventText}
+            setEventText={setEventText}
+            eventTime={eventTime}
+            setEventTime={setEventTime}
+            eventCategoryGroup={eventCategoryGroup}
+            setEventCategoryGroup={setEventCategoryGroup}
+            eventCategories={eventCategories}
+            setEventCategories={setEventCategories}
+            chartList={chartList}
+            handleAddEvent={handleAddEvent}
+            events={events}
+            setEvents={setEvents}
+            selectedCharts={selectedCharts}
+            handleChartSelect={handleChartSelect}
+            chartRefs={chartRefs}
+            getChartData={getChartData}
+            getChartOptionsWithBounds={getChartOptionsWithBounds}
+            EventBadgeOverlay={EventBadgeOverlay}
+            sensorData={sensorData}
+          />
         )}
         {/* --- COMMANDES --- */}
         {activeTab === "Commandes" && (

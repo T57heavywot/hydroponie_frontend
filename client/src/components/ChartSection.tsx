@@ -12,7 +12,9 @@ interface ChartSectionProps {
     color: string,
     category?: string
   ) => any;
-  selectCharts: boolean;
+  showChartSelection: boolean;
+  chartsToExport: string[];
+  setChartsToExport: React.Dispatch<React.SetStateAction<string[]>>;
   selectedCharts: string[];
   handleChartSelect: (key: string) => void;
   chartRefs: React.MutableRefObject<Record<string, any>>;
@@ -26,7 +28,9 @@ const ChartSection: React.FC<ChartSectionProps> = ({
   chartList,
   getChartData,
   getChartOptionsWithBounds,
-  selectCharts,
+  showChartSelection,
+  chartsToExport,
+  setChartsToExport,
   selectedCharts,
   handleChartSelect,
   chartRefs,
@@ -45,12 +49,18 @@ const ChartSection: React.FC<ChartSectionProps> = ({
               key={chart.key}
               className="bg-white rounded-lg shadow-md p-4 border border-gray-300 relative"
             >
-              {selectCharts && (
+              {showChartSelection && (
                 <input
                   type="checkbox"
-                  className="absolute top-2 right-2 w-5 h-5"
-                  checked={selectedCharts.includes(chart.key)}
-                  onChange={() => handleChartSelect(chart.key)}
+                  className="absolute top-2 right-2 w-5 h-5 z-10"
+                  checked={chartsToExport.includes(chart.key)}
+                  onChange={e => {
+                    setChartsToExport((prev: string[]) =>
+                      e.target.checked
+                        ? [...prev, chart.key]
+                        : prev.filter((k: string) => k !== chart.key)
+                    );
+                  }}
                 />
               )}
               <h2 className="text-base font-semibold text-gray-800 mb-2">
