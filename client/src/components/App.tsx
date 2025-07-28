@@ -62,33 +62,29 @@ interface SensorData {
   waterLevelBac: number;
 }
 
-// Génère des données simulées pour la période choisie
-function generateMockData(hours: number): SensorData[] {
-  const now = new Date();
-  const data: SensorData[] = [];
-  for (let i = hours; i >= 0; i--) {
-    const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
-    data.push({
-      timestamp: timestamp.toISOString(),
-      temperature: 20 + Math.random() * 5,
-      humidity: 40 + Math.random() * 20,
-      lightLevel: 500 + Math.random() * 300,
-      nutrients: {
-        nitrogen: 200 + Math.random() * 100,
-        phosphorus: 50 + Math.random() * 30,
-        potassium: 150 + Math.random() * 50,
-      },
-      phReservoir: 5.5 + Math.random() * 2,
-      phBac: 5.5 + Math.random() * 2,
-      ecReservoir: 1.2 + Math.random() * 0.6,
-      ecBac: 1.2 + Math.random() * 0.6,
-      oxygenReservoir: 80 + Math.random() * 10,
-      oxygenBac: 80 + Math.random() * 10,
-      waterLevelReservoir: 40 + Math.random() * 60,
-      waterLevelBac: Math.max(0, 40 + Math.random() * 60 - 55),
-    });
-  }
-  return data;
+// Transforme les données brutes de l'API en format exploitable par les graphiques
+function mapSensorData(rawData: any[]): SensorData[] {
+  // Regroupe par timestamp
+  const grouped: Record<string, any> = {};
+  rawData.forEach(([timestamp, capteur, param, valeur]) => {
+    if (!grouped[timestamp]) grouped[timestamp] = { timestamp };
+    // Mappe les noms pour correspondre à tes clés de chartList
+    let key = "";
+    if (capteur === "Climat" && param === "temperature") key = "temperature";
+    else if (capteur === "Climat" && param === "humidity") key = "humidity";
+    else if (capteur === "EC Reservoir" && param === "ec") key = "ecReservoir";
+    else if (capteur === "DO Reservoir" && param === "do") key = "oxygenReservoir";
+    else if (capteur === "pH Reservoir" && param === "pH") key = "phReservoir";
+    else if (capteur === "Niveau Eau Reservoir" && param === "niveau") key = "waterLevelReservoir";
+    else if (capteur === "EC Bac" && param === "ec") key = "ecBac";
+    else if (capteur === "DO Bac" && param === "do") key = "oxygenBac";
+    else if (capteur === "pH Bac" && param === "pH") key = "phBac";
+    else if (capteur === "Niveau Eau Bac" && param === "niveau") key = "waterLevelBac";
+    // Ajoute la valeur si la clé est reconnue
+    if (key) grouped[timestamp][key] = valeur;
+  });
+  // Retourne un tableau trié par timestamp
+  return Object.values(grouped).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 }
 
 function App() {
@@ -110,20 +106,26 @@ function App() {
   // Ajout d'un état pour le groupe de catégories sélectionné
   const [eventCategoryGroup, setEventCategoryGroup] = useState("");
 
-  const BORNES = {
-    phReservoir: { min: 5.5, max: 6.5 },
-    phBac: { min: 5.5, max: 6.5 },
-    ecReservoir: { min: 1.2, max: 2.0 },
-    ecBac: { min: 1.2, max: 2.0 },
-    oxygenReservoir: { min: 80, max: 100 },
-    oxygenBac: { min: 80, max: 100 },
-    temperature: { min: 18, max: 26 },
-    humidity: { min: 40, max: 70 },
-    waterLevelReservoir: { min: 20, max: 100 },
-    waterLevelBac: { min: 10, max: 45 },
+  type BornesType = {
+    [key: string]: { min: number; max: number };
   };
+  const [editableBornes, setEditableBornes] = useState<BornesType>({});
 
-  const [editableBornes, setEditableBornes] = useState({ ...BORNES });
+  // Récupère les bornes dynamiques depuis l'API Flask au chargement
+  useEffect(() => {
+    const fetchBornes = async () => {
+      try {
+        const res = await fetch('/api/config/bornes');
+        const text = await res.text();
+        console.log('Réponse brute /api/config/bornes:', text);
+        const bornes = JSON.parse(text);
+        setEditableBornes(bornes);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des bornes:', error);
+      }
+    };
+    fetchBornes();
+  }, []);
 
   // Bornes par défaut pour chaque plante
   const DEFAULT_PLANT_BORNES = {
@@ -223,24 +225,58 @@ function App() {
   // Remettre l'état pour la période d'affichage des graphiques
   const [selectedHours, setSelectedHours] = useState<number>(6);
 
+  // Fonction de mapping des données API brutes vers l'objet sensorData[] attendu
+  function mapSensorData(rawData: any[]): any[] {
+    // On regroupe par timestamp
+    const grouped: Record<string, any> = {};
+    rawData.forEach((row: any[]) => {
+      const [timestamp, capteur, param, valeur] = row;
+      if (!grouped[timestamp]) {
+        grouped[timestamp] = {
+          timestamp,
+          temperature: undefined,
+          humidity: undefined,
+          ecReservoir: undefined,
+          phReservoir: undefined,
+          oxygenReservoir: undefined,
+          ecBac: undefined,
+          phBac: undefined,
+          oxygenBac: undefined,
+        };
+      }
+      // Mapping selon capteur/param
+      if (capteur === "Climat" && param === "temperature") grouped[timestamp].temperature = valeur;
+      if (capteur === "Climat" && param === "humidity") grouped[timestamp].humidity = valeur;
+      if (capteur === "EC Reservoir" && param === "ec") grouped[timestamp].ecReservoir = typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "pH Reservoir" && param === "pH") grouped[timestamp].phReservoir = valeur;
+      if (capteur === "DO Reservoir" && param === "do") grouped[timestamp].oxygenReservoir = valeur;
+      if (capteur === "EC Bac" && param === "ec") grouped[timestamp].ecBac = typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "pH Bac" && param === "pH") grouped[timestamp].phBac = valeur;
+      if (capteur === "DO Bac" && param === "do") grouped[timestamp].oxygenBac = valeur;
+    });
+    // Retourne trié par timestamp croissant
+    return Object.values(grouped).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Simuler la récupération des données du backend
-        const mockSensorData = generateMockData(selectedHours);
-        setSensorData(mockSensorData);
-        // Simuler la récupération du niveau d'eau
-        const mockWaterLevel = { level: Math.floor(Math.random() * 100) };
-        setWaterLevel(mockWaterLevel);
+        // Récupère les vraies données capteurs depuis l'API Flask
+        const res = await fetch(`/api/sensors/data`);
+        const text = await res.text();
+        console.log('Réponse brute /api/sensors/data:', text);
+        const data = JSON.parse(text);
+        setSensorData(mapSensorData(data));
+        // Si tu as une route pour le niveau d'eau séparé, adapte ici
+        // const resWater = await fetch(`/api/water-level`);
+        // const water = await resWater.json();
+        // setWaterLevel(water);
       } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
       }
     };
-
     fetchData();
-    // Actualiser les données toutes les 30 secondes
     const interval = setInterval(fetchData, 30000);
-
     return () => clearInterval(interval);
   }, [selectedHours]);
 
@@ -279,18 +315,20 @@ function App() {
     label: string,
     color: string
   ) => {
-    if (!sensorData.length) return null;
+    // Toujours retourner un dataset, même vide, pour que le graphique s'affiche
     return {
       datasets: [
         {
           label,
-          data: sensorData.map((data) => ({
-            x: new Date(data.timestamp),
-            y:
-              typeof (data as any)[dataKey] === "object"
-                ? null
-                : (data as any)[dataKey],
-          })),
+          data: sensorData.length
+            ? sensorData.map((data) => ({
+                x: new Date(data.timestamp),
+                y:
+                  typeof (data as any)[dataKey] === "object"
+                    ? null
+                    : (data as any)[dataKey],
+              }))
+            : [],
           borderColor: color,
           backgroundColor: color + "20",
           tension: 0.4,
@@ -582,7 +620,7 @@ function App() {
             {/* Groupe Ambiance */}
             <AmbianceSection
               latestData={latestData && { temperature: latestData.temperature, humidity: latestData.humidity }}
-              editableBornes={editableBornes}
+              editableBornes={editableBornes as any}
             />
             {/* Groupe Réservoir */}
             <ReservoirSection
@@ -592,7 +630,7 @@ function App() {
                 oxygenReservoir: latestData.oxygenReservoir
               }}
               waterLevel={waterLevel}
-              editableBornes={editableBornes}
+              editableBornes={editableBornes as any}
             />
             {/* Groupe Bac du système */}
             <BacSection
@@ -602,7 +640,7 @@ function App() {
                 oxygenBac: latestData.oxygenBac
               }}
               waterLevel={waterLevel}
-              editableBornes={editableBornes}
+              editableBornes={editableBornes as any}
             />
           </div>
         )}
@@ -760,9 +798,9 @@ function App() {
                             type="number"
                             step="any"
                             className="border rounded px-2 py-1 w-20"
-                            value={val.min}
+                            value={(val as { min: number; max: number }).min}
                             onChange={(e) =>
-                              setEditableBornes((b) => ({
+                              setEditableBornes((b: BornesType) => ({
                                 ...b,
                                 [typedKey]: {
                                   ...b[typedKey],
@@ -776,9 +814,9 @@ function App() {
                             type="number"
                             step="any"
                             className="border rounded px-2 py-1 w-20"
-                            value={val.max}
+                            value={(val as { min: number; max: number }).max}
                             onChange={(e) =>
-                              setEditableBornes((b) => ({
+                              setEditableBornes((b: BornesType) => ({
                                 ...b,
                                 [typedKey]: {
                                   ...b[typedKey],

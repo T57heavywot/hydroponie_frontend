@@ -27,7 +27,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           {latestData ? latestData.ecBac.toFixed(2) + " mS/cm" : "--"}
         </span>
         <span className="text-xs text-purple-400">Dernière mesure</span>
-        {latestData && (
+        {latestData && editableBornes.ecBac && (
           <GaugeBar
             min={0}
             max={3}
@@ -38,7 +38,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.ecBac.min} - {editableBornes.ecBac.max} mS/cm
+          Intervalle recommandé : {editableBornes.ecBac ? `${editableBornes.ecBac.min} - ${editableBornes.ecBac.max} mS/cm` : 'N/A'}
         </span>
       </div>
       {/* pH bac */}
@@ -48,7 +48,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           {latestData ? latestData.phBac.toFixed(2) : "--"}
         </span>
         <span className="text-xs text-fuchsia-400">Dernière mesure</span>
-        {latestData && (
+        {latestData && editableBornes.phBac && (
           <GaugeBar
             min={0}
             max={14}
@@ -59,7 +59,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.phBac.min} - {editableBornes.phBac.max}
+          Intervalle recommandé : {editableBornes.phBac ? `${editableBornes.phBac.min} - ${editableBornes.phBac.max}` : 'N/A'}
         </span>
       </div>
       {/* Oxygène bac */}
@@ -69,7 +69,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           {latestData ? latestData.oxygenBac.toFixed(1) + " %" : "--"}
         </span>
         <span className="text-xs text-blue-400">Dernière mesure</span>
-        {latestData && (
+        {latestData && editableBornes.oxygenBac && (
           <GaugeBar
             min={0}
             max={100}
@@ -80,7 +80,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.oxygenBac.min} - {editableBornes.oxygenBac.max}
+          Intervalle recommandé : {editableBornes.oxygenBac ? `${editableBornes.oxygenBac.min} - ${editableBornes.oxygenBac.max}` : 'N/A'}
         </span>
       </div>
       {/* Niveau d'eau du bac du système */}

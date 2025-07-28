@@ -27,7 +27,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           {latestData ? latestData.ecReservoir.toFixed(2) + " mS/cm" : "--"}
         </span>
         <span className="text-xs text-purple-400">Dernière mesure</span>
-        {latestData && (
+        {latestData && editableBornes.ecReservoir && (
           <GaugeBar
             min={0}
             max={3}
@@ -38,7 +38,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.ecReservoir.min} - {editableBornes.ecReservoir.max} mS/cm
+          Intervalle recommandé : {editableBornes.ecReservoir ? `${editableBornes.ecReservoir.min} - ${editableBornes.ecReservoir.max} mS/cm` : 'N/A'}
         </span>
       </div>
       {/* pH réservoir */}
@@ -48,7 +48,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           {latestData ? latestData.phReservoir.toFixed(2) : "--"}
         </span>
         <span className="text-xs text-fuchsia-400">Dernière mesure</span>
-        {latestData && (
+        {latestData && editableBornes.phReservoir && (
           <GaugeBar
             min={0}
             max={14}
@@ -59,7 +59,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.phReservoir.min} - {editableBornes.phReservoir.max}
+          Intervalle recommandé : {editableBornes.phReservoir ? `${editableBornes.phReservoir.min} - ${editableBornes.phReservoir.max}` : 'N/A'}
         </span>
       </div>
       {/* Oxygène réservoir */}
@@ -69,7 +69,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           {latestData ? latestData.oxygenReservoir.toFixed(1) + " %" : "--"}
         </span>
         <span className="text-xs text-blue-400">Dernière mesure</span>
-        {latestData && (
+        {latestData && editableBornes.oxygenReservoir && (
           <GaugeBar
             min={0}
             max={100}
@@ -80,7 +80,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.oxygenReservoir.min} - {editableBornes.oxygenReservoir.max} %
+          Intervalle recommandé : {editableBornes.oxygenReservoir ? `${editableBornes.oxygenReservoir.min} - ${editableBornes.oxygenReservoir.max} %` : 'N/A'}
         </span>
       </div>
       {/* Niveau d'eau du réservoir */}

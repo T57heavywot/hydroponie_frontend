@@ -23,7 +23,7 @@ const AmbianceSection: React.FC<AmbianceSectionProps> = ({ latestData, editableB
           {latestData ? latestData.temperature.toFixed(1) + " °C" : "--"}
         </span>
         <span className="text-xs text-sky-400">Dernière mesure</span>
-        {latestData && (
+        {latestData && editableBornes.temperature && (
           <GaugeBar
             min={0}
             max={40}
@@ -34,7 +34,7 @@ const AmbianceSection: React.FC<AmbianceSectionProps> = ({ latestData, editableB
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.temperature.min} - {editableBornes.temperature.max} °C
+          Intervalle recommandé : {editableBornes.temperature ? `${editableBornes.temperature.min} - ${editableBornes.temperature.max} °C` : 'N/A'}
         </span>
       </div>
       {/* Humidité ambiante */}
@@ -44,7 +44,7 @@ const AmbianceSection: React.FC<AmbianceSectionProps> = ({ latestData, editableB
           {latestData ? latestData.humidity.toFixed(1) + " %" : "--"}
         </span>
         <span className="text-xs text-violet-400">Dernière mesure</span>
-        {latestData && (
+        {latestData && editableBornes.humidity && (
           <GaugeBar
             min={0}
             max={100}
@@ -55,7 +55,7 @@ const AmbianceSection: React.FC<AmbianceSectionProps> = ({ latestData, editableB
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.humidity.min} - {editableBornes.humidity.max} %
+          Intervalle recommandé : {editableBornes.humidity ? `${editableBornes.humidity.min} - ${editableBornes.humidity.max} %` : 'N/A'}
         </span>
       </div>
     </div>
