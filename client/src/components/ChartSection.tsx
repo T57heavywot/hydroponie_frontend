@@ -18,7 +18,6 @@ interface ChartSectionProps {
   selectedCharts: string[];
   handleChartSelect: (key: string) => void;
   chartRefs: React.MutableRefObject<Record<string, any>>;
-  events: any[];
   EventBadgeOverlay: React.ComponentType<any>;
 }
 
@@ -34,7 +33,6 @@ const ChartSection: React.FC<ChartSectionProps> = ({
   selectedCharts,
   handleChartSelect,
   chartRefs,
-  events,
   EventBadgeOverlay,
 }) => (
   <div>
@@ -80,18 +78,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({
                   )}
                   redraw={false}
                 />
-                {chartRefs.current[chart.key]?.scales?.x && (
-                  <EventBadgeOverlay
-                    events={events
-                      .filter((ev) => ev.categories.includes(chart.key))
-                      .map((ev) => ({
-                        time: ev.time,
-                        text: ev.text,
-                      }))}
-                    chartRef={{ current: chartRefs.current[chart.key].canvas }}
-                    xScale={chartRefs.current[chart.key].scales.x}
-                  />
-                )}
+                {/* EventBadgeOverlay désactivé, gestion des événements dans App.tsx */}
               </div>
             </div>
           )

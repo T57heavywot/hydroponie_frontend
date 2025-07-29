@@ -92,19 +92,16 @@ function App() {
   const [waterLevel, setWaterLevel] = useState({ level: 0 });
   const [activeTab, setActiveTab] = useState<string>("Accueil");
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
-  const [events, setEvents] = useState<
-    {
-      id: string;
-      text: string;
-      time: string;
-      categories: string[];
-    }[]
-  >([]);
-  const [eventText, setEventText] = useState("");
+  // Événements persistants
+  const [events, setEvents] = useState<any[]>([]);
+  // Types d'événements disponibles (depuis backend)
+  const [eventTypes, setEventTypes] = useState<string[]>([]);
+  // Sélection du type d'événement (obligatoire)
+  const [selectedEventType, setSelectedEventType] = useState<string>("");
+  // Note de l'événement (optionnelle)
+  const [eventNote, setEventNote] = useState("");
+  // Date/heure de l'événement (obligatoire)
   const [eventTime, setEventTime] = useState("");
-  const [eventCategories, setEventCategories] = useState<string[]>([]);
-  // Ajout d'un état pour le groupe de catégories sélectionné
-  const [eventCategoryGroup, setEventCategoryGroup] = useState("");
 
   type BornesType = {
     [key: string]: { min: number; max: number };
@@ -287,29 +284,24 @@ function App() {
     return () => clearInterval(interval);
   }, [selectedHours]);
 
-  // Génère les annotations pour un graphique donné
-  // Correction du typage dans getEventAnnotations
-  function getEventAnnotations(category: string) {
-    const filtered = events.filter((ev: any) =>
-      ev.categories.includes(category)
-    );
+  // Affiche la note/commentaire en permanence sur la ligne d'événement (label)
+  function getEventAnnotations(_: string) {
     const annotationsObj: Record<string, any> = {};
-    filtered.forEach((ev: any, idx: number) => {
+    events.forEach((ev: any, idx: number) => {
       annotationsObj[`event${idx}`] = {
         type: "line",
-        xMin: new Date(ev.time),
-        xMax: new Date(ev.time),
+        xMin: new Date(ev.timestamp),
+        xMax: new Date(ev.timestamp),
         borderColor: "#f59e42",
         borderWidth: 2,
         label: {
-          display: false,
-          content: ev.text,
+          display: true,
+          content: ev.event_note || ev.event_type,
           enabled: true,
           position: "start",
           backgroundColor: "#f59e42",
           color: "#fff",
-          font: { weight: "bold", size: 12 },
-          callout: true, // info-bulle au survol (chartjs-plugin-annotation >= 3.0.0)
+          font: { weight: "bold", size: 14 },
         },
       };
     });
@@ -458,23 +450,66 @@ function App() {
     };
   };
 
-  // Ajout d'un événement
-  const handleAddEvent = (e: React.FormEvent) => {
+  // Récupère les types d'événements depuis le backend
+  useEffect(() => {
+    const fetchEventTypes = async () => {
+      try {
+        const res = await fetch('/api/event_type');
+        const types = await res.json();
+        setEventTypes(types);
+      } catch (e) {
+        setEventTypes([]);
+      }
+    };
+    fetchEventTypes();
+  }, []);
+
+  // Récupère la liste des événements depuis le backend
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch('/api/event');
+      const data = await res.json();
+      setEvents(data);
+    } catch (e) {
+      setEvents([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  // Ajout d'un événement (POST)
+  const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventText || !eventTime || eventCategories.length === 0) return;
-    setEvents((prev) => [
-      ...prev,
-      {
-        id: Math.random().toString(36).slice(2),
-        text: eventText,
-        time: eventTime,
-        categories: eventCategories,
-      },
-    ]);
-    setEventText("");
-    setEventTime("");
-    setEventCategories([]);
-    setEventCategoryGroup("");
+    if (!selectedEventType || !eventTime) {
+      alert("Veuillez sélectionner un type et une date/heure.");
+      return;
+    }
+    try {
+      const payload = {
+        event_name: selectedEventType,
+        event_type: selectedEventType,
+        event_note: eventNote,
+        timestamp: eventTime // non utilisé côté backend, mais utile pour l'UI
+      };
+      const res = await fetch('/api/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        setSelectedEventType("");
+        setEventNote("");
+        setEventTime("");
+        fetchEvents();
+      } else {
+        const err = await res.json();
+        alert("Erreur lors de l'ajout de l'événement : " + (err.error || res.status));
+      }
+    } catch (e) {
+      alert("Erreur lors de l'ajout de l'événement.");
+    }
   };
 
   // Met à jour les bornes selon la plante sélectionnée
@@ -581,28 +616,18 @@ function App() {
   };
 
   // Interface des props pour GraphiquesTab
-  interface GraphiquesTabProps {
-    selectedHours: number;
-    setSelectedHours: React.Dispatch<React.SetStateAction<number>>;
-    eventText: string;
-    setEventText: React.Dispatch<React.SetStateAction<string>>;
-    eventTime: string;
-    setEventTime: React.Dispatch<React.SetStateAction<string>>;
-    eventCategoryGroup: string;
-    setEventCategoryGroup: React.Dispatch<React.SetStateAction<string>>;
-    eventCategories: string[];
-    setEventCategories: React.Dispatch<React.SetStateAction<string[]>>;
-    chartList: any[];
-    handleAddEvent: (e: React.FormEvent) => void;
-    events: any[];
-    setEvents: React.Dispatch<React.SetStateAction<any[]>>;
-    selectedCharts: string[];
-    handleChartSelect: (key: string) => void;
-    chartRefs: React.MutableRefObject<Record<string, any>>;
-    getChartData: (dataKey: string, label: string, color: string) => any;
-    getChartOptionsWithBounds: (dataKey: string, label: string, color: string, category?: string) => any;
-    EventBadgeOverlay: any;
-  }
+interface GraphiquesTabProps {
+  selectedHours: number;
+  setSelectedHours: React.Dispatch<React.SetStateAction<number>>;
+  chartList: any[];
+  selectedCharts: string[];
+  handleChartSelect: (key: string) => void;
+  chartRefs: React.MutableRefObject<Record<string, any>>;
+  getChartData: (dataKey: string, label: string, color: string) => any;
+  getChartOptionsWithBounds: (dataKey: string, label: string, color: string, category?: string) => any;
+  EventBadgeOverlay: any;
+  sensorData: SensorData[];
+}
 
   // --- ASSEMBLAGE PRINCIPAL DES COMPOSANTS ---
   return (
@@ -666,29 +691,85 @@ function App() {
         )}
         {/* --- GRAPHIQUES --- */}
         {activeTab === "Graphiques" && (
-          <GraphiquesTab
-            selectedHours={selectedHours}
-            setSelectedHours={setSelectedHours}
-            eventText={eventText}
-            setEventText={setEventText}
-            eventTime={eventTime}
-            setEventTime={setEventTime}
-            eventCategoryGroup={eventCategoryGroup}
-            setEventCategoryGroup={setEventCategoryGroup}
-            eventCategories={eventCategories}
-            setEventCategories={setEventCategories}
-            chartList={chartList}
-            handleAddEvent={handleAddEvent}
-            events={events}
-            setEvents={setEvents}
-            selectedCharts={selectedCharts}
-            handleChartSelect={handleChartSelect}
-            chartRefs={chartRefs}
-            getChartData={getChartData}
-            getChartOptionsWithBounds={getChartOptionsWithBounds}
-            EventBadgeOverlay={EventBadgeOverlay}
-            sensorData={sensorData}
-          />
+          <div>
+            {/* Formulaire d'ajout d'événement */}
+            <form className="flex gap-4 items-end mb-4" onSubmit={handleAddEvent}>
+              <div className="flex flex-col">
+                <label className="text-sm font-medium">Type d'événement</label>
+                <select
+                  className="border rounded px-2 py-1"
+                  value={selectedEventType}
+                  onChange={e => setSelectedEventType(e.target.value)}
+                  required
+                >
+                  <option value="">Sélectionner...</option>
+                  {eventTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="text-sm font-medium">Date/heure</label>
+                <input
+                  type="datetime-local"
+                  className="border rounded px-2 py-1"
+                  value={eventTime}
+                  onChange={e => setEventTime(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-sm font-medium">Note</label>
+                <input
+                  type="text"
+                  className="border rounded px-2 py-1"
+                  value={eventNote}
+                  onChange={e => setEventNote(e.target.value)}
+                  placeholder="Commentaire (optionnel)"
+                />
+              </div>
+              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700">
+                Ajouter événement
+              </button>
+              <button type="button" className="ml-2 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={fetchEvents}>
+                Rafraîchir
+              </button>
+            </form>
+            {/* Liste des événements */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-300">
+                <thead>
+                  <tr>
+                    <th className="px-2 py-1 border">Horodatage</th>
+                    <th className="px-2 py-1 border">Type</th>
+                    <th className="px-2 py-1 border">Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.map((ev, idx) => (
+                    <tr key={idx}>
+                      <td className="px-2 py-1 border">{ev.timestamp ? new Date(ev.timestamp).toLocaleString() : "-"}</td>
+                      <td className="px-2 py-1 border">{ev.event_type}</td>
+                      <td className="px-2 py-1 border">{ev.event_note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* GraphiquesTab original (si besoin) */}
+            <GraphiquesTab
+              selectedHours={selectedHours}
+              setSelectedHours={setSelectedHours}
+              chartList={chartList}
+              selectedCharts={selectedCharts}
+              handleChartSelect={handleChartSelect}
+              chartRefs={chartRefs}
+              getChartData={getChartData}
+              getChartOptionsWithBounds={getChartOptionsWithBounds}
+              EventBadgeOverlay={EventBadgeOverlay}
+              sensorData={sensorData}
+            />
+          </div>
         )}
         {/* --- COMMANDES --- */}
         {activeTab === "Commandes" && (
