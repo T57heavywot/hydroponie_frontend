@@ -111,15 +111,52 @@ function App() {
   };
   const [editableBornes, setEditableBornes] = useState<BornesType>({});
 
-  // Récupère les bornes dynamiques depuis l'API Flask au chargement
+  // Récupère les bornes min/max dynamiquement depuis l'API Flask /api/config
   useEffect(() => {
     const fetchBornes = async () => {
       try {
-        const res = await fetch('/api/config/bornes');
+        const res = await fetch('/api/config');
         const text = await res.text();
-        console.log('Réponse brute /api/config/bornes:', text);
-        const bornes = JSON.parse(text);
+        console.log('[DEBUG] Réponse brute /api/config:', text);
+        const data = JSON.parse(text);
+        // Construction du mapping capteur/paramètre -> clé de graphique
+        // Ex: { temperature: { min: 15, max: 30 }, ... }
+        const bornes: Record<string, { min: number; max: number }> = {};
+        const sensors = data && data.config && data.config.sensors ? data.config.sensors : [];
+        sensors.forEach((sensor: any) => {
+          if (sensor.values && Array.isArray(sensor.values)) {
+            sensor.values.forEach((val: any) => {
+              // Mappe le nom du capteur + paramètre vers la clé utilisée dans chartList
+              let key = "";
+              if (sensor.name === "Climat" && val.name === "temperature") key = "temperature";
+              else if (sensor.name === "Climat" && val.name === "humidity") key = "humidity";
+              else if (sensor.name === "EC Reservoir" && val.name === "ec") key = "ecReservoir";
+              else if (sensor.name === "DO Reservoir" && val.name === "do") key = "oxygenReservoir";
+              else if (sensor.name === "pH Reservoir" && val.name === "pH") key = "phReservoir";
+              else if (sensor.name === "Niveau Eau Reservoir" && val.name === "niveau") key = "waterLevelReservoir";
+              else if (sensor.name === "EC Bac" && val.name === "ec") key = "ecBac";
+              else if (sensor.name === "DO Bac" && val.name === "do") key = "oxygenBac";
+              else if (sensor.name === "pH Bac" && val.name === "pH") key = "phBac";
+              else if (sensor.name === "Niveau Eau Bac" && val.name === "niveau") key = "waterLevelBac";
+              if (key) {
+                bornes[key] = { min: val.lower_limit, max: val.upper_limit };
+              }
+            });
+          }
+        });
         setEditableBornes(bornes);
+        // Debug : afficher les clés présentes et attendues
+        const expected = [
+          "temperature", "humidity", "ecReservoir", "phReservoir", "oxygenReservoir",
+          "ecBac", "phBac", "oxygenBac", "waterLevelReservoir", "waterLevelBac"
+        ];
+        console.log("[DEBUG] Clés bornes récupérées:", Object.keys(bornes));
+        console.log("[DEBUG] Clés attendues:", expected);
+        expected.forEach(key => {
+          if (!bornes[key]) {
+            console.warn(`[DEBUG] Borne manquante pour : ${key}`);
+          }
+        });
       } catch (error) {
         console.error('Erreur lors de la récupération des bornes:', error);
       }
@@ -127,39 +164,9 @@ function App() {
     fetchBornes();
   }, []);
 
-  // Bornes par défaut pour chaque plante
-  const DEFAULT_PLANT_BORNES = {
-    basilic: {
-      phReservoir: { min: 5.5, max: 6.5 },
-      phBac: { min: 5.5, max: 6.5 },
-      ecReservoir: { min: 1.2, max: 1.6 },
-      ecBac: { min: 1.2, max: 1.6 },
-      oxygenReservoir: { min: 80, max: 100 },
-      oxygenBac: { min: 80, max: 100 },
-      temperature: { min: 20, max: 28 },
-      humidity: { min: 50, max: 70 },
-      waterLevelReservoir: { min: 20, max: 100 },
-      waterLevelBac: { min: 10, max: 45 },
-    },
-    tomate: {
-      phReservoir: { min: 5.5, max: 6.5 },
-      phBac: { min: 5.5, max: 6.5 },
-      ecReservoir: { min: 2.0, max: 5.0 },
-      ecBac: { min: 2.0, max: 5.0 },
-      oxygenReservoir: { min: 80, max: 100 },
-      oxygenBac: { min: 80, max: 100 },
-      temperature: { min: 18, max: 26 },
-      humidity: { min: 40, max: 70 },
-      waterLevelReservoir: { min: 20, max: 100 },
-      waterLevelBac: { min: 10, max: 45 },
-    },
-  } as const;
-
-  type PlantKey = keyof typeof DEFAULT_PLANT_BORNES | "";
-  const [selectedPlant, setSelectedPlant] = useState<PlantKey>("");
-  const [plantBornes, setPlantBornes] = useState<any>({
-    ...DEFAULT_PLANT_BORNES,
-  });
+  // Bornes par plante supprimées : on utilise uniquement les bornes dynamiques du backend
+  const [selectedPlant, setSelectedPlant] = useState<string>("");
+  const [plantBornes, setPlantBornes] = useState<any>({});
 
   // Liste des graphiques disponibles
   const chartList = [
@@ -703,7 +710,7 @@ function App() {
                         className="border rounded px-2 py-1 w-full"
                         value={selectedPlant}
                         onChange={(e) =>
-                          setSelectedPlant(e.target.value as PlantKey)
+                          setSelectedPlant(e.target.value)
                         }
                       >
                         <option value="">-- Choisir une plante --</option>

@@ -38,7 +38,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.ecReservoir ? `${editableBornes.ecReservoir.min} - ${editableBornes.ecReservoir.max} mS/cm` : 'N/A'}
+          Intervalle recommandé : {editableBornes.ecReservoir && editableBornes.ecReservoir.min !== undefined && editableBornes.ecReservoir.max !== undefined ? `${editableBornes.ecReservoir.min} - ${editableBornes.ecReservoir.max} mS/cm` : 'N/A'}
         </span>
       </div>
       {/* pH réservoir */}
@@ -59,7 +59,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.phReservoir ? `${editableBornes.phReservoir.min} - ${editableBornes.phReservoir.max}` : 'N/A'}
+          Intervalle recommandé : {editableBornes.phReservoir && editableBornes.phReservoir.min !== undefined && editableBornes.phReservoir.max !== undefined ? `${editableBornes.phReservoir.min} - ${editableBornes.phReservoir.max} pH` : 'N/A'}
         </span>
       </div>
       {/* Oxygène réservoir */}
@@ -80,7 +80,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.oxygenReservoir ? `${editableBornes.oxygenReservoir.min} - ${editableBornes.oxygenReservoir.max} %` : 'N/A'}
+          Intervalle recommandé : {editableBornes.oxygenReservoir && editableBornes.oxygenReservoir.min !== undefined && editableBornes.oxygenReservoir.max !== undefined ? `${editableBornes.oxygenReservoir.min} - ${editableBornes.oxygenReservoir.max} %` : 'N/A'}
         </span>
       </div>
       {/* Niveau d'eau du réservoir */}

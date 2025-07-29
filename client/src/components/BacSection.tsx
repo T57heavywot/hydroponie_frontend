@@ -38,7 +38,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.ecBac ? `${editableBornes.ecBac.min} - ${editableBornes.ecBac.max} mS/cm` : 'N/A'}
+          Intervalle recommandé : {editableBornes.ecBac && editableBornes.ecBac.min !== undefined && editableBornes.ecBac.max !== undefined ? `${editableBornes.ecBac.min} - ${editableBornes.ecBac.max} mS/cm` : 'N/A'}
         </span>
       </div>
       {/* pH bac */}
@@ -59,7 +59,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.phBac ? `${editableBornes.phBac.min} - ${editableBornes.phBac.max}` : 'N/A'}
+          Intervalle recommandé : {editableBornes.phBac && editableBornes.phBac.min !== undefined && editableBornes.phBac.max !== undefined ? `${editableBornes.phBac.min} - ${editableBornes.phBac.max} pH` : 'N/A'}
         </span>
       </div>
       {/* Oxygène bac */}
@@ -80,7 +80,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.oxygenBac ? `${editableBornes.oxygenBac.min} - ${editableBornes.oxygenBac.max}` : 'N/A'}
+          Intervalle recommandé : {editableBornes.oxygenBac && editableBornes.oxygenBac.min !== undefined && editableBornes.oxygenBac.max !== undefined ? `${editableBornes.oxygenBac.min} - ${editableBornes.oxygenBac.max} %` : 'N/A'}
         </span>
       </div>
       {/* Niveau d'eau du bac du système */}
