@@ -315,13 +315,26 @@ function App() {
     label: string,
     color: string
   ) => {
-    // Toujours retourner un dataset, même vide, pour que le graphique s'affiche
+    // Filtrer les données selon la période sélectionnée
+    let filtered = sensorData;
+    if (sensorData.length > 0 && selectedHours > 0) {
+      const lastTimestamp = new Date(sensorData[sensorData.length - 1].timestamp).getTime();
+      const msRange = selectedHours * 60 * 60 * 1000;
+      filtered = sensorData.filter((data) => {
+        const t = new Date(data.timestamp).getTime();
+        return t >= lastTimestamp - msRange && t <= lastTimestamp;
+      });
+      // Si aucune donnée dans la période sélectionnée, afficher tout (pour éviter un graphique vide)
+      if (filtered.length === 0) {
+        filtered = sensorData;
+      }
+    }
     return {
       datasets: [
         {
           label,
-          data: sensorData.length
-            ? sensorData.map((data) => ({
+          data: filtered.length
+            ? filtered.map((data) => ({
                 x: new Date(data.timestamp),
                 y:
                   typeof (data as any)[dataKey] === "object"
