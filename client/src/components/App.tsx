@@ -284,23 +284,32 @@ function App() {
     return () => clearInterval(interval);
   }, [selectedHours]);
 
-  // Affiche uniquement la ligne d'événement sans la note
+  // Affiche uniquement la ligne d'événement sans la note et dans la période sélectionnée
   function getEventAnnotations(_: string) {
     const annotationsObj: Record<string, any> = {};
-    events.forEach((ev: any, idx: number) => {
-      const isSelected = selectedEventId === idx;
-      const lineColor = isSelected ? "#2563eb" : "#f59e42";
-      annotationsObj[`event${idx}`] = {
-        type: "line",
-        xMin: new Date(ev.timestamp),
-        xMax: new Date(ev.timestamp),
-        borderColor: lineColor,
-        borderWidth: isSelected ? 3 : 2,
-        label: {
-          display: false
-        },
-      };
-    });
+    if (sensorData.length > 0 && selectedHours > 0) {
+      const lastTimestamp = new Date(sensorData[sensorData.length - 1].timestamp).getTime();
+      const msRange = selectedHours * 60 * 60 * 1000;
+      const startTime = lastTimestamp - msRange;
+      events.forEach((ev: any, idx: number) => {
+        const eventTime = new Date(ev.timestamp).getTime();
+        // Affiche uniquement si l'événement est dans la période affichée
+        if (eventTime >= startTime && eventTime <= lastTimestamp) {
+          const isSelected = selectedEventId === idx;
+          const lineColor = isSelected ? "#2563eb" : "#f59e42";
+          annotationsObj[`event${idx}`] = {
+            type: "line",
+            xMin: new Date(ev.timestamp),
+            xMax: new Date(ev.timestamp),
+            borderColor: lineColor,
+            borderWidth: isSelected ? 3 : 2,
+            label: {
+              display: false
+            },
+          };
+        }
+      });
+    }
     return annotationsObj;
   }
 
