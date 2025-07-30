@@ -94,12 +94,12 @@ function App() {
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
   // Événements persistants
   const [events, setEvents] = useState<any[]>([]);
+  // Event sélectionné pour le surlignage
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   // Types d'événements disponibles (depuis backend)
   const [eventTypes, setEventTypes] = useState<string[]>([]);
   // Sélection du type d'événement (obligatoire)
   const [selectedEventType, setSelectedEventType] = useState<string>("");
-  // Note de l'événement (optionnelle)
-  const [eventNote, setEventNote] = useState("");
   // Date/heure de l'événement (obligatoire)
   const [eventTime, setEventTime] = useState("");
 
@@ -284,24 +284,20 @@ function App() {
     return () => clearInterval(interval);
   }, [selectedHours]);
 
-  // Affiche la note/commentaire en permanence sur la ligne d'événement (label)
+  // Affiche uniquement la ligne d'événement sans la note
   function getEventAnnotations(_: string) {
     const annotationsObj: Record<string, any> = {};
     events.forEach((ev: any, idx: number) => {
+      const isSelected = selectedEventId === idx;
+      const lineColor = isSelected ? "#2563eb" : "#f59e42";
       annotationsObj[`event${idx}`] = {
         type: "line",
         xMin: new Date(ev.timestamp),
         xMax: new Date(ev.timestamp),
-        borderColor: "#f59e42",
-        borderWidth: 2,
+        borderColor: lineColor,
+        borderWidth: isSelected ? 3 : 2,
         label: {
-          display: true,
-          content: ev.event_note || ev.event_type,
-          enabled: true,
-          position: "start",
-          backgroundColor: "#f59e42",
-          color: "#fff",
-          font: { weight: "bold", size: 14 },
+          display: false
         },
       };
     });
@@ -490,7 +486,6 @@ function App() {
       const payload = {
         event_name: selectedEventType,
         event_type: selectedEventType,
-        event_note: eventNote,
         timestamp: eventTime // non utilisé côté backend, mais utile pour l'UI
       };
       const res = await fetch('/api/event', {
@@ -500,7 +495,6 @@ function App() {
       });
       if (res.ok) {
         setSelectedEventType("");
-        setEventNote("");
         setEventTime("");
         fetchEvents();
       } else {
@@ -723,8 +717,6 @@ interface GraphiquesTabProps {
                 <input
                   type="text"
                   className="border rounded px-2 py-1"
-                  value={eventNote}
-                  onChange={e => setEventNote(e.target.value)}
                   placeholder="Commentaire (optionnel)"
                 />
               </div>
@@ -747,7 +739,13 @@ interface GraphiquesTabProps {
                 </thead>
                 <tbody>
                   {events.map((ev, idx) => (
-                    <tr key={idx}>
+                    <tr 
+                      key={idx}
+                      onClick={() => setSelectedEventId(selectedEventId === idx ? null : idx)}
+                      className={`cursor-pointer hover:bg-gray-50 transition-colors ${
+                        selectedEventId === idx ? 'bg-blue-50' : ''
+                      }`}
+                    >
                       <td className="px-2 py-1 border">{ev.timestamp ? new Date(ev.timestamp).toLocaleString() : "-"}</td>
                       <td className="px-2 py-1 border">{ev.event_type}</td>
                       <td className="px-2 py-1 border">{ev.event_note}</td>
