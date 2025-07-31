@@ -144,6 +144,7 @@ function App() {
               else if (sensor.name === "DO Bac" && val.name === "do") key = "oxygenBac";
               else if (sensor.name === "pH Bac" && val.name === "pH") key = "phBac";
               else if (sensor.name === "Niveau Eau Bac" && val.name === "niveau") key = "waterLevelBac";
+              else if (sensor.name === "Thermocouple Reservoir" && val.name === "temperature") key = "temperatureReservoir";
               if (key) {
                 bornes[key] = { min: val.lower_limit, max: val.upper_limit };
               }
@@ -154,7 +155,7 @@ function App() {
         // Debug : afficher les clés présentes et attendues
         const expected = [
           "temperature", "humidity", "ecReservoir", "phReservoir", "oxygenReservoir",
-          "ecBac", "phBac", "oxygenBac", "waterLevelReservoir", "waterLevelBac"
+          "ecBac", "phBac", "oxygenBac", "waterLevelReservoir", "waterLevelBac", "temperatureReservoir"
         ];
         console.log("[DEBUG] Clés bornes récupérées:", Object.keys(bornes));
         console.log("[DEBUG] Clés attendues:", expected);
