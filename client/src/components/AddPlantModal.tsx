@@ -32,7 +32,7 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({
         >
           ×
         </button>
-        <h2 className="text-lg font-bold mb-4">Ajouter une nouvelle plante</h2>
+        <h2 className="text-lg font-bold mb-4">Ajouter une nouvelle configuration</h2>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -42,7 +42,7 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({
         >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nom de la plante
+              Nom de la configuration
             </label>
             <input
               type="text"
@@ -99,7 +99,7 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({
             type="submit"
             className="mt-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700 self-end"
           >
-            Ajouter la plante
+            Ajouter la configuration
           </button>
         </form>
       </div>

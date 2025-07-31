@@ -432,6 +432,39 @@ function App() {
         },
       };
     }
+    // Calcule min/max Y dynamiquement comme getChartData
+    let filtered = sensorData;
+    if (sensorData.length > 0 && selectedHours > 0) {
+      const lastTimestamp = new Date(sensorData[sensorData.length - 1].timestamp).getTime();
+      const msRange = selectedHours * 60 * 60 * 1000;
+      filtered = sensorData.filter((data) => {
+        const t = new Date(data.timestamp).getTime();
+        return t >= lastTimestamp - msRange && t <= lastTimestamp;
+      });
+      if (filtered.length === 0) {
+        filtered = sensorData;
+      }
+    }
+    const values: number[] = filtered
+      .map((data: any) => {
+        let v = (data as any)[dataKey];
+        if ((dataKey === "ecReservoir" || dataKey === "ecBac") && typeof v === "string") {
+          const match = v.match(/^[0-9.]+/);
+          v = match ? parseFloat(match[0]) : NaN;
+        }
+        return typeof v === "number" && !isNaN(v) ? v : undefined;
+      })
+      .filter((v): v is number => typeof v === "number" && !isNaN(v));
+    let minValue = undefined;
+    let maxValue = undefined;
+    if (values.length > 0) {
+      minValue = Math.min(...values);
+      maxValue = Math.max(...values);
+      if (minValue === maxValue) {
+        minValue = minValue - 1;
+        maxValue = maxValue + 1;
+      }
+    }
     return {
       ...chartOptions,
       plugins: {
@@ -442,9 +475,9 @@ function App() {
       },
       scales: {
         x: {
-          type: "time" as const, // forcer le littéral
+          type: "time" as const,
           time: {
-            unit: "hour" as const, // forcer le littéral accepté par Chart.js
+            unit: "hour" as const,
             displayFormats: {
               hour: "HH:mm",
               minute: "HH:mm",
@@ -455,7 +488,11 @@ function App() {
             text: "Heure",
           },
         },
-        y: chartOptions.scales.y,
+        y: {
+          beginAtZero: false,
+          min: minValue !== undefined ? minValue : undefined,
+          max: maxValue !== undefined ? maxValue : undefined,
+        },
       },
     };
   };
@@ -552,14 +589,14 @@ function App() {
 
   // Dictionnaire de traduction des paramètres pour l'affichage
   const PARAM_LABELS: Record<string, string> = {
-    phReservoir: "pH réservoir",
-    phBac: "pH bac",
-    ecReservoir: "Conductivité réservoir",
-    ecBac: "Conductivité bac",
-    oxygenReservoir: "Oxygène réservoir",
-    oxygenBac: "Oxygène bac",
-    temperature: "Température ambiante",
-    humidity: "Humidité ambiante",
+    phReservoir: "pH réservoir pH",
+    phBac: "pH bac pH",
+    ecReservoir: "Conductivité réservoir mS/cm",
+    ecBac: "Conductivité bac mS/cm",
+    oxygenReservoir: "Oxygène réservoir mg/L",
+    oxygenBac: "Oxygène bac mg/L",
+    temperature: "Température ambiante [°C]  ",
+    humidity: "Humidité ambiante %",
   };
 
   const [showAddPlantModal, setShowAddPlantModal] = useState(false);
@@ -828,7 +865,7 @@ interface GraphiquesTabProps {
                   {/* Sélecteur de plante */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Plante par défaut
+                      Configuration par défaut
                     </label>
                     <div className="flex gap-2 items-center">
                       <select
@@ -866,7 +903,7 @@ interface GraphiquesTabProps {
                         }}
                         title="Ajouter une nouvelle plante"
                       >
-                        + Ajouter une configuration des bornes
+                        + Ajouter une configuration
                       </button>
                     </div>
                   </div>
@@ -966,7 +1003,7 @@ interface GraphiquesTabProps {
                           [selectedPlant]: { ...editableBornes },
                         }));
                         alert(
-                          "Bornes enregistrées pour la plante sélectionnée !"
+                          "Bornes enregistrées pour la configuration sélectionnée !"
                         );
                       }
                     }}
@@ -994,11 +1031,11 @@ interface GraphiquesTabProps {
               onSubmit={() => {
                 const name = newPlantName.trim().toLowerCase();
                 if (!name) {
-                  alert("Veuillez saisir un nom de plante.");
+                  alert("Veuillez saisir un nom de configuration.");
                   return;
                 }
                 if (plantBornes[name]) {
-                  alert("Cette plante existe déjà.");
+                  alert("Cette configuration existe déjà.");
                   return;
                 }
                 setPlantBornes((prev: any) => ({

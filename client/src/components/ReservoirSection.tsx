@@ -66,7 +66,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
         <h3 className="text-base font-semibold text-blue-900 mb-1">Oxygène dissous</h3>
         <span className="text-3xl font-extrabold text-blue-600 mb-1">
-          {latestData ? latestData.oxygenReservoir.toFixed(1) + " %" : "--"}
+          {latestData ? latestData.oxygenReservoir.toFixed(1) + " mg/L" : "--"}
         </span>
         <span className="text-xs text-blue-400">Dernière mesure</span>
         {latestData && editableBornes.oxygenReservoir && (
@@ -76,7 +76,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
             value={latestData.oxygenReservoir}
             optimalMin={editableBornes.oxygenReservoir.min}
             optimalMax={editableBornes.oxygenReservoir.max}
-            unit="%"
+            unit="mg/L"
           />
         )}
         <span className="text-xs text-gray-500 mt-1">

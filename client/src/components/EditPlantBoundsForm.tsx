@@ -79,7 +79,7 @@ const EditPlantBoundsForm: React.FC<EditPlantBoundsFormProps> = React.memo(({
             ...prev,
             [selectedPlant]: { ...editableBornes },
           }));
-          alert("Bornes enregistrées pour la plante sélectionnée !");
+          alert("Bornes enregistrées pour la configuration sélectionnée !");
         }
       }}
     >

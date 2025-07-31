@@ -66,7 +66,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
         <h3 className="text-base font-semibold text-blue-900 mb-1">Oxygène dissous</h3>
         <span className="text-3xl font-extrabold text-blue-600 mb-1">
-          {latestData ? latestData.oxygenBac.toFixed(1) + " %" : "--"}
+          {latestData ? latestData.oxygenBac.toFixed(1) + " mg/L" : "--"}
         </span>
         <span className="text-xs text-blue-400">Dernière mesure</span>
         {latestData && editableBornes.oxygenBac && (
@@ -76,7 +76,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
             value={latestData.oxygenBac}
             optimalMin={editableBornes.oxygenBac.min}
             optimalMax={editableBornes.oxygenBac.max}
-            unit="%"
+            unit="mg/L"
           />
         )}
         <span className="text-xs text-gray-500 mt-1">
