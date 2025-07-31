@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import FillReservoirModal from "./FillReservoirModal";
+import NutrientModal from "./NutrientModal";
+import ConfirmDrainModal from "./ConfirmDrainModal";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -88,6 +91,10 @@ function mapSensorData(rawData: any[]): SensorData[] {
 }
 
 function App() {
+  // États pour les popups
+  const [showFillReservoir, setShowFillReservoir] = useState(false);
+  const [showNutrientModal, setShowNutrientModal] = useState(false);
+  const [showConfirmDrain, setShowConfirmDrain] = useState(false);
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [waterLevel, setWaterLevel] = useState({ level: 0 });
   const [activeTab, setActiveTab] = useState<string>("Accueil");
@@ -265,13 +272,11 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Récupère les vraies données capteurs depuis l'API Flask
         const res = await fetch(`/api/sensors/data`);
         const text = await res.text();
         console.log('Réponse brute /api/sensors/data:', text);
         const data = JSON.parse(text);
         setSensorData(mapSensorData(data));
-        // Si tu as une route pour le niveau d'eau séparé, adapte ici
         // const resWater = await fetch(`/api/water-level`);
         // const water = await resWater.json();
         // setWaterLevel(water);
@@ -539,6 +544,12 @@ function App() {
     }
   };
 
+  const handleVidangeBac = () => {
+    // Affiche une pop-up de confirmation ou déclenche la commande réelle
+    alert("Le bac est en train d'être vidangé.");
+    // TODO: Intégrer l'appel backend ici
+  };
+
   // Dictionnaire de traduction des paramètres pour l'affichage
   const PARAM_LABELS: Record<string, string> = {
     phReservoir: "pH réservoir",
@@ -661,6 +672,32 @@ interface GraphiquesTabProps {
           ))}
         </div>
       </nav>
+      {/* Modals popups */}
+      <FillReservoirModal
+        show={showFillReservoir}
+        onClose={() => setShowFillReservoir(false)}
+        onDone={() => {
+          setShowFillReservoir(false);
+          setShowNutrientModal(true);
+        }}
+      />
+      <NutrientModal
+        show={showNutrientModal}
+        onClose={() => setShowNutrientModal(false)}
+        onSubmit={(nutrients) => {
+          setShowNutrientModal(false);
+          // Ici tu peux gérer l'envoi des valeurs au backend ou afficher une confirmation
+          alert("Nutriments ajoutés : " + nutrients.map(n => `${n.type}: ${n.value}ml`).join(", "));
+        }}
+      />
+      <ConfirmDrainModal
+        show={showConfirmDrain}
+        onClose={() => setShowConfirmDrain(false)}
+        onConfirm={() => {
+          setShowConfirmDrain(false);
+          handleFlushReservoir();
+        }}
+      />
       <main className="container mx-auto py-8 px-6">
         {/* --- ACCUEIL --- */}
         {activeTab === "Accueil" && (
@@ -801,7 +838,7 @@ interface GraphiquesTabProps {
                           setSelectedPlant(e.target.value)
                         }
                       >
-                        <option value="">-- Choisir une plante --</option>
+                        <option value="">-- Choisir une configuration --</option>
                         {Object.keys(plantBornes).map((plant) => (
                           <option key={plant} value={plant}>
                             {plant.charAt(0).toUpperCase() + plant.slice(1)}
@@ -829,51 +866,34 @@ interface GraphiquesTabProps {
                         }}
                         title="Ajouter une nouvelle plante"
                       >
-                        + Ajouter une plante
+                        + Ajouter une configuration des bornes
                       </button>
                     </div>
                   </div>
                   {/* Actions rapides */}
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">
-                        Ouverture des valves
-                      </span>
+                      <span className="font-medium text-gray-700">Ouverture des valves</span>
                       <div className="flex gap-2">
-                        <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
-                          Ouverture
-                        </button>
-                        <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
-                          Fermeture
-                        </button>
+                        <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">Ouverture</button>
+                        <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">Fermeture</button>
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">
-                        Ajouter des nutriments
-                      </span>
-                      <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
-                        Ajouter
-                      </button>
+                      <span className="font-medium text-gray-700">Ajouter des nutriments</span>
+                      <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100" onClick={() => setShowNutrientModal(true)}>Ajouter</button>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">
-                        Remplir le bac d'eau du système
-                      </span>
-                      <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">
-                        Remplir
-                      </button>
+                      <span className="font-medium text-gray-700">Remplir le réservoir du système</span>
+                      <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100" onClick={() => setShowFillReservoir(true)}>Remplir</button>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">
-                        Vidanger le réservoir
-                      </span>
-                      <button
-                        className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50"
-                        onClick={handleFlushReservoir}
-                      >
-                        Vidanger
-                      </button>
+                      <span className="font-medium text-gray-700">Vidanger le réservoir</span>
+                      <button className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50" onClick={() => setShowConfirmDrain(true)}>Vidanger</button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-700">Vidanger le bac</span>
+                      <button className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50" onClick={handleFlushReservoir}>Vidanger</button>
                     </div>
                   </div>
                 </div>
