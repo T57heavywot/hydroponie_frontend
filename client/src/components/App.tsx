@@ -858,37 +858,18 @@ interface GraphiquesTabProps {
                 </tbody>
               </table>
             </div>
-            {/* Section Réservoir */}
-            <h2 className="text-xl font-bold text-gray-700 mt-8 mb-4">Réservoir</h2>
-            <ChartSection
-              title=""
-              chartKeys={["phReservoir", "oxygenReservoir", "ecReservoir", "waterLevelReservoir", "temperatureReservoir"]}
+            
+            <GraphiquesTab
+              selectedHours={selectedHours}
+              setSelectedHours={setSelectedHours}
               chartList={chartList}
-              getChartData={getChartData}
-              getChartOptionsWithBounds={getChartOptionsWithBounds}
-              showChartSelection={false}
-              chartsToExport={[]}
-              setChartsToExport={() => {}}
               selectedCharts={selectedCharts}
               handleChartSelect={handleChartSelect}
               chartRefs={chartRefs}
-              EventBadgeOverlay={EventBadgeOverlay}
-            />
-            {/* Section Bac du système */}
-            <h2 className="text-xl font-bold text-gray-700 mt-8 mb-4">Bac du système</h2>
-            <ChartSection
-              title=""
-              chartKeys={["phBac", "oxygenBac", "ecBac", "waterLevelBac", "temperatureBac"]}
-              chartList={chartList}
               getChartData={getChartData}
               getChartOptionsWithBounds={getChartOptionsWithBounds}
-              showChartSelection={false}
-              chartsToExport={[]}
-              setChartsToExport={() => {}}
-              selectedCharts={selectedCharts}
-              handleChartSelect={handleChartSelect}
-              chartRefs={chartRefs}
               EventBadgeOverlay={EventBadgeOverlay}
+              sensorData={sensorData}
             />
           </div>
         )}

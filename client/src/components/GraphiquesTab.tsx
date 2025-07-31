@@ -128,7 +128,7 @@ const GraphiquesTab: React.FC<GraphiquesTabProps> = (props) => {
       />
       <ChartSection
         title="Réservoir"
-        chartKeys={["phReservoir", "oxygenReservoir", "ecReservoir", "waterLevelReservoir"]}
+        chartKeys={["phReservoir", "oxygenReservoir", "ecReservoir", "waterLevelReservoir", "temperatureReservoir"]}
         chartList={chartList}
         getChartData={getChartData}
         getChartOptionsWithBounds={getChartOptionsWithBounds}
@@ -143,7 +143,7 @@ const GraphiquesTab: React.FC<GraphiquesTabProps> = (props) => {
       />
       <ChartSection
         title="Bac du système"
-        chartKeys={["phBac", "oxygenBac", "ecBac", "waterLevelBac"]}
+        chartKeys={["phBac", "oxygenBac", "ecBac", "waterLevelBac", "temperatureBac"]}
         chartList={chartList}
         getChartData={getChartData}
         getChartOptionsWithBounds={getChartOptionsWithBounds}
