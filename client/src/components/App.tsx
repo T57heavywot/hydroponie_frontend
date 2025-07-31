@@ -48,6 +48,8 @@ ChartJS.register(
 interface SensorData {
   timestamp: string;
   temperature: number;
+  temperatureReservoir?: number;
+  temperatureBac?: number;
   humidity: number;
   lightLevel: number;
   nutrients: {
@@ -71,7 +73,6 @@ function mapSensorData(rawData: any[]): SensorData[] {
   const grouped: Record<string, any> = {};
   rawData.forEach(([timestamp, capteur, param, valeur]) => {
     if (!grouped[timestamp]) grouped[timestamp] = { timestamp };
-    // Mappe les noms pour correspondre à tes clés de chartList
     let key = "";
     if (capteur === "Climat" && param === "temperature") key = "temperature";
     else if (capteur === "Climat" && param === "humidity") key = "humidity";
@@ -83,7 +84,8 @@ function mapSensorData(rawData: any[]): SensorData[] {
     else if (capteur === "DO Bac" && param === "do") key = "oxygenBac";
     else if (capteur === "pH Bac" && param === "pH") key = "phBac";
     else if (capteur === "Niveau Eau Bac" && param === "niveau") key = "waterLevelBac";
-    // Ajoute la valeur si la clé est reconnue
+    else if (capteur === "Thermocouple Reservoir" && param === "temperature") key = "temperatureReservoir";
+    else if (capteur === "Thermocouple Bac" && param === "temperature") key = "temperatureBac";
     if (key) grouped[timestamp][key] = valeur;
   });
   // Retourne un tableau trié par timestamp
@@ -212,6 +214,18 @@ function App() {
       color: "#3b82f6",
     },
     {
+      key: "temperatureReservoir",
+      label: "Température réservoir",
+      dataKey: "temperatureReservoir",
+      color: "#3b82f6",
+    },
+    {
+      key: "temperatureBac",
+      label: "Température bac",
+      dataKey: "temperatureBac",
+      color: "#2563eb",
+    },
+    {
       key: "humidity",
       label: "Humidité ambiante",
       dataKey: "humidity",
@@ -253,6 +267,8 @@ function App() {
           ecBac: undefined,
           phBac: undefined,
           oxygenBac: undefined,
+          temperatureReservoir: undefined,
+          temperatureBac: undefined,
         };
       }
       // Mapping selon capteur/param
@@ -264,6 +280,8 @@ function App() {
       if (capteur === "EC Bac" && param === "ec") grouped[timestamp].ecBac = typeof valeur === "string" ? parseFloat(valeur) : valeur;
       if (capteur === "pH Bac" && param === "pH") grouped[timestamp].phBac = valeur;
       if (capteur === "DO Bac" && param === "do") grouped[timestamp].oxygenBac = valeur;
+      if (capteur === "Thermocouple Reservoir" && param === "temperature") grouped[timestamp].temperatureReservoir = typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "Thermocouple Bac" && param === "temperature") grouped[timestamp].temperatureBac = typeof valeur === "string" ? parseFloat(valeur) : valeur;
     });
     // Retourne trié par timestamp croissant
     return Object.values(grouped).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -595,7 +613,9 @@ function App() {
     ecBac: "Conductivité bac mS/cm",
     oxygenReservoir: "Oxygène réservoir mg/L",
     oxygenBac: "Oxygène bac mg/L",
-    temperature: "Température ambiante [°C]  ",
+    temperature: "Température ambiante [°C]",
+    temperatureReservoir: "Température réservoir [°C]",
+    temperatureBac: "Température bac [°C]",
     humidity: "Humidité ambiante %",
   };
 
@@ -749,7 +769,8 @@ interface GraphiquesTabProps {
               latestData={latestData && {
                 ecReservoir: latestData.ecReservoir,
                 phReservoir: latestData.phReservoir,
-                oxygenReservoir: latestData.oxygenReservoir
+                oxygenReservoir: latestData.oxygenReservoir,
+                temperatureReservoir: latestData.temperatureReservoir
               }}
               waterLevel={waterLevel}
               editableBornes={editableBornes as any}
@@ -759,7 +780,8 @@ interface GraphiquesTabProps {
               latestData={latestData && {
                 ecBac: latestData.ecBac,
                 phBac: latestData.phBac,
-                oxygenBac: latestData.oxygenBac
+                oxygenBac: latestData.oxygenBac,
+                temperatureBac: latestData.temperatureBac
               }}
               waterLevel={waterLevel}
               editableBornes={editableBornes as any}
@@ -776,9 +798,7 @@ interface GraphiquesTabProps {
                 <select
                   className="border rounded px-2 py-1"
                   value={selectedEventType}
-                  onChange={e => setSelectedEventType(e.target.value)}
-                  required
-                >
+                  onChange={e => setSelectedEventType(e.target.value)}>
                   <option value="">Sélectionner...</option>
                   {eventTypes.map(type => (
                     <option key={type} value={type}>{type}</option>
@@ -837,18 +857,37 @@ interface GraphiquesTabProps {
                 </tbody>
               </table>
             </div>
-            {/* GraphiquesTab original (si besoin) */}
-            <GraphiquesTab
-              selectedHours={selectedHours}
-              setSelectedHours={setSelectedHours}
+            {/* Section Réservoir */}
+            <h2 className="text-xl font-bold text-gray-700 mt-8 mb-4">Réservoir</h2>
+            <ChartSection
+              title=""
+              chartKeys={["phReservoir", "oxygenReservoir", "ecReservoir", "waterLevelReservoir", "temperatureReservoir"]}
               chartList={chartList}
+              getChartData={getChartData}
+              getChartOptionsWithBounds={getChartOptionsWithBounds}
+              showChartSelection={false}
+              chartsToExport={[]}
+              setChartsToExport={() => {}}
               selectedCharts={selectedCharts}
               handleChartSelect={handleChartSelect}
               chartRefs={chartRefs}
+              EventBadgeOverlay={EventBadgeOverlay}
+            />
+            {/* Section Bac du système */}
+            <h2 className="text-xl font-bold text-gray-700 mt-8 mb-4">Bac du système</h2>
+            <ChartSection
+              title=""
+              chartKeys={["phBac", "oxygenBac", "ecBac", "waterLevelBac", "temperatureBac"]}
+              chartList={chartList}
               getChartData={getChartData}
               getChartOptionsWithBounds={getChartOptionsWithBounds}
+              showChartSelection={false}
+              chartsToExport={[]}
+              setChartsToExport={() => {}}
+              selectedCharts={selectedCharts}
+              handleChartSelect={handleChartSelect}
+              chartRefs={chartRefs}
               EventBadgeOverlay={EventBadgeOverlay}
-              sensorData={sensorData}
             />
           </div>
         )}
