@@ -1016,6 +1016,7 @@ interface GraphiquesTabProps {
                   setPlantBornes={setPlantBornes}
                   selectedPlant={selectedPlant}
                   setEditableBornes={setEditableBornes}
+                  editableBornes={editableBornes}
                 />
               </div>
             </div>

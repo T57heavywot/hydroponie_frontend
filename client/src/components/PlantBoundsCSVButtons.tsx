@@ -1,11 +1,18 @@
 import React from "react";
 
+type Bounds = { min: number; max: number };
+type PlantBornesType = { [plant: string]: { [param: string]: Bounds } };
+type EditableBornesType = { [param: string]: Bounds };
+
 interface PlantBoundsCSVButtonsProps {
-  plantBornes: any;
-  setPlantBornes: React.Dispatch<any>;
+  plantBornes: PlantBornesType;
+  setPlantBornes: React.Dispatch<React.SetStateAction<PlantBornesType>>;
   selectedPlant: string;
-  setEditableBornes: React.Dispatch<any>;
+
+  setEditableBornes: React.Dispatch<React.SetStateAction<EditableBornesType>>;
+  editableBornes: EditableBornesType;
 }
+ 
 
 const EXCLUDED_PARAMS = ["waterLevelReservoir", "waterLevelBac"];
 
@@ -14,17 +21,30 @@ const PlantBoundsCSVButtons: React.FC<PlantBoundsCSVButtonsProps> = ({
   setPlantBornes,
   selectedPlant,
   setEditableBornes,
+  editableBornes,
 }) => {
-  // Export CSV
+  // Export CSV (nouvelles vraies valeurs : bornes affichées)
   const handleExport = () => {
     const rows = ["Plant;Parameter;Min;Max"];
-    Object.entries(plantBornes).forEach(([plant, params]) => {
-      Object.entries(params as { [key: string]: { min: number; max: number } })
+    // Si une configuration est sélectionnée, exporte ses bornes
+    if (editableBornes && Object.keys(editableBornes).length > 0) {
+      // Toujours exporter les bornes affichées (celles du backend)
+      Object.entries(editableBornes)
         .filter(([param]) => !EXCLUDED_PARAMS.includes(param))
         .forEach(([param, val]) => {
-          rows.push(`${plant};${param};${val.min};${val.max}`);
+          const borne = val as { min: number; max: number };
+          rows.push(`${selectedPlant || 'default'};${param};${borne.min};${borne.max}`);
         });
-    });
+    } else if (plantBornes && Object.keys(plantBornes).length > 0) {
+      Object.entries(plantBornes).forEach(([plant, params]) => {
+        Object.entries(params as { [key: string]: { min: number; max: number } })
+          .filter(([param]) => !EXCLUDED_PARAMS.includes(param))
+          .forEach(([param, val]) => {
+            const borne = val as { min: number; max: number };
+            rows.push(`${plant};${param};${borne.min};${borne.max}`);
+          });
+      });
+    }
     const csv = rows.join("\n");
     const blob = new Blob(["\uFEFF" + csv], {
       type: "text/csv;charset=utf-8;",
