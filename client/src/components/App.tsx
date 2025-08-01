@@ -931,13 +931,6 @@ interface GraphiquesTabProps {
                   {/* Actions rapides */}
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">Ouverture des valves</span>
-                      <div className="flex gap-2">
-                        <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">Ouverture</button>
-                        <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100">Fermeture</button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-gray-700">Ajouter des nutriments</span>
                       <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100" onClick={() => setShowNutrientModal(true)}>Ajouter</button>
                     </div>
