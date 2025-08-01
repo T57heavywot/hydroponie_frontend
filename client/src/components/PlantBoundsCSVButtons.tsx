@@ -1,7 +1,7 @@
 import React from "react";
 
 type Bounds = { min: number; max: number };
-type PlantBornesType = { [plant: string]: { [param: string]: Bounds } };
+type PlantBornesType = { [config: string]: { [param: string]: Bounds } };
 type EditableBornesType = { [param: string]: Bounds };
 
 interface PlantBoundsCSVButtonsProps {
@@ -25,7 +25,7 @@ const PlantBoundsCSVButtons: React.FC<PlantBoundsCSVButtonsProps> = ({
 }) => {
   // Export CSV (nouvelles vraies valeurs : bornes affichées)
   const handleExport = () => {
-    const rows = ["Plant;Parameter;Min;Max"];
+    const rows = [" Config;Parameter;Min;Max"];
     // Si une configuration est sélectionnée, exporte ses bornes
     if (editableBornes && Object.keys(editableBornes).length > 0) {
       // Toujours exporter les bornes affichées (celles du backend)
@@ -36,12 +36,12 @@ const PlantBoundsCSVButtons: React.FC<PlantBoundsCSVButtonsProps> = ({
           rows.push(`${selectedPlant || 'default'};${param};${borne.min};${borne.max}`);
         });
     } else if (plantBornes && Object.keys(plantBornes).length > 0) {
-      Object.entries(plantBornes).forEach(([plant, params]) => {
+      Object.entries(plantBornes).forEach(([config, params]) => {
         Object.entries(params as { [key: string]: { min: number; max: number } })
           .filter(([param]) => !EXCLUDED_PARAMS.includes(param))
           .forEach(([param, val]) => {
             const borne = val as { min: number; max: number };
-            rows.push(`${plant};${param};${borne.min};${borne.max}`);
+            rows.push(`${config};${param};${borne.min};${borne.max}`);
           });
       });
     }
@@ -52,7 +52,7 @@ const PlantBoundsCSVButtons: React.FC<PlantBoundsCSVButtonsProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "plant_bounds.csv";
+    a.download = "config_bounds.csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -75,27 +75,27 @@ const PlantBoundsCSVButtons: React.FC<PlantBoundsCSVButtonsProps> = ({
       const header = lines[0].split(";").map((h) => h.trim().toLowerCase());
       if (
         header.length < 4 ||
-        header[0] !== "plant" ||
+        header[0] !== "config" ||
         !header[1].startsWith("param")
       ) {
-        alert("En-tête CSV invalide. Format attendu : Plant;Parameter;Min;Max");
+        alert("En-tête CSV invalide. Format attendu : Config ;Parameter;Min;Max");
         return;
       }
       const newPlantBornes: any = {};
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(";");
         if (cols.length < 4) continue;
-        const [plant, param, min, max] = cols.map((c) => c.trim());
+        const [config, param, min, max] = cols.map((c) => c.trim());
         if (
-          !plant ||
+          !config ||
           !param ||
           isNaN(Number(min)) ||
           isNaN(Number(max)) ||
           EXCLUDED_PARAMS.includes(param)
         )
           continue;
-        if (!newPlantBornes[plant]) newPlantBornes[plant] = {};
-        newPlantBornes[plant][param] = {
+        if (!newPlantBornes[config]) newPlantBornes[config] = {};
+        newPlantBornes[config][param] = {
           min: parseFloat(min),
           max: parseFloat(max),
         };

@@ -608,16 +608,16 @@ function App() {
 
   // Dictionnaire de traduction des paramètres pour l'affichage
   const PARAM_LABELS: Record<string, string> = {
-    phReservoir: "pH réservoir pH",
-    phBac: "pH bac pH",
-    ecReservoir: "Conductivité réservoir mS/cm",
-    ecBac: "Conductivité bac mS/cm",
-    oxygenReservoir: "Oxygène réservoir mg/L",
-    oxygenBac: "Oxygène bac mg/L",
+    phReservoir: "pH réservoir",
+    phBac: "pH bac",
+    ecReservoir: "Conductivité réservoir [mS/cm]",
+    ecBac: "Conductivité bac [mS/cm]",
+    oxygenReservoir: "Oxygène réservoir [mg/L]",
+    oxygenBac: "Oxygène bac [mg/L]",
     temperature: "Température ambiante [°C]",
     temperatureReservoir: "Température réservoir [°C]",
     temperatureBac: "Température bac [°C]",
-    humidity: "Humidité ambiante %",
+    humidity: "Humidité ambiante [%]",
   };
 
   const [showAddPlantModal, setShowAddPlantModal] = useState(false);
@@ -975,42 +975,48 @@ interface GraphiquesTabProps {
                     .map(([key, val]) => {
                       const typedKey = key as keyof typeof editableBornes;
                       return (
-                        <div key={key} className="flex items-center gap-2">
-                          <span className="w-48 font-medium text-gray-700">
+                          <div key={key} className="flex flex-wrap items-center gap-4">
+                          <span className="w-60 font-medium text-gray-700">
                             {PARAM_LABELS[key] || key}
                           </span>
-                          <label className="text-sm">Min</label>
-                          <input
-                            type="number"
-                            step="any"
-                            className="border rounded px-2 py-1 w-20"
-                            value={(val as { min: number; max: number }).min}
-                            onChange={(e) =>
-                              setEditableBornes((b: BornesType) => ({
-                                ...b,
-                                [typedKey]: {
-                                  ...b[typedKey],
-                                  min: parseFloat(e.target.value),
-                                },
-                              }))
-                            }
-                          />
-                          <label className="text-sm">Max</label>
-                          <input
-                            type="number"
-                            step="any"
-                            className="border rounded px-2 py-1 w-20"
-                            value={(val as { min: number; max: number }).max}
-                            onChange={(e) =>
-                              setEditableBornes((b: BornesType) => ({
-                                ...b,
-                                [typedKey]: {
-                                  ...b[typedKey],
-                                  max: parseFloat(e.target.value),
-                                },
-                              }))
-                            }
-                          />
+
+                          <div className="flex items-center gap-1">
+                            <label className="text-sm">Min</label>
+                            <input
+                              type="number"
+                              step="any"
+                              className="border rounded px-2 py-1 w-24"
+                              value={(val as { min: number; max: number }).min}
+                              onChange={(e) =>
+                                setEditableBornes((b: BornesType) => ({
+                                  ...b,
+                                  [typedKey]: {
+                                    ...b[typedKey],
+                                    min: parseFloat(e.target.value),
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <label className="text-sm">Max</label>
+                            <input
+                              type="number"
+                              step="any"
+                              className="border rounded px-2 py-1 w-24"
+                              value={(val as { min: number; max: number }).max}
+                              onChange={(e) =>
+                                setEditableBornes((b: BornesType) => ({
+                                  ...b,
+                                  [typedKey]: {
+                                    ...b[typedKey],
+                                    max: parseFloat(e.target.value),
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
                         </div>
                       );
                     })}
