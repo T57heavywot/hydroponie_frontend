@@ -19,11 +19,11 @@ import "./App.css";
 import WaterLevel from "./WaterLevel";
 import GaugeBar from "./GaugeBar";
 import EventBadgeOverlay from "./EventBadgeOverlay";
-import AddPlantModal from "./AddPlantModal";
 import EventForm from "./EventForm";
 import EventList from "./EventList";
 import ChartSection from "./ChartSection";
 import PlantBoundsCSVButtons from "./PlantBoundsCSVButtons";
+import ActuatorsModal from "./ActuatorsModal";
 import InfoBox from "./InfoBox";
 import ChartTimeSelector from "./ChartTimeSelector";
 import AmbianceSection from "./AmbianceSection";
@@ -93,6 +93,21 @@ function mapSensorData(rawData: any[]): SensorData[] {
 }
 
 function App() {
+  // État pour la modale des actionneurs (valves, etc.)
+  const [showActuatorsModal, setShowActuatorsModal] = useState(false);
+  // Pour le futur : à remplacer par un fetch backend
+  const [actuators, setActuators] = useState([
+    { id: "valve1", name: "Valve 1", isOpen: false },
+    { id: "valve2", name: "Valve 2", isOpen: false },
+  ]);
+
+  // Handler pour ouvrir/fermer un actionneur
+  const handleToggleActuator = (id: string, open: boolean) => {
+    setActuators((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, isOpen: open } : a))
+    );
+    // TODO: Appeler le backend pour ouvrir/fermer l'actionneur
+  };
   // États pour les popups
   const [showFillReservoir, setShowFillReservoir] = useState(false);
   const [showNutrientModal, setShowNutrientModal] = useState(false);
@@ -171,9 +186,7 @@ function App() {
     fetchBornes();
   }, []);
 
-  // Bornes par plante supprimées : on utilise uniquement les bornes dynamiques du backend
-  const [selectedPlant, setSelectedPlant] = useState<string>("");
-  const [plantBornes, setPlantBornes] = useState<any>({});
+
 
   // Liste des graphiques disponibles
   const chartList = [
@@ -576,12 +589,7 @@ function App() {
     }
   };
 
-  // Met à jour les bornes selon la plante sélectionnée
-  useEffect(() => {
-    if (selectedPlant && plantBornes[selectedPlant]) {
-      setEditableBornes({ ...plantBornes[selectedPlant] });
-    }
-  }, [selectedPlant, plantBornes]);
+
 
   // Fonction pour envoyer la commande flush au serveur
   const handleFlushReservoir = async () => {
@@ -620,72 +628,9 @@ function App() {
     humidity: "Humidité ambiante [%]",
   };
 
-  const [showAddPlantModal, setShowAddPlantModal] = useState(false);
-  const [newPlantName, setNewPlantName] = useState("");
-  const [newPlantBornes, setNewPlantBornes] = useState<any>({
-    phReservoir: { min: 5.5, max: 6.5 },
-    phBac: { min: 5.5, max: 6.5 },
-    ecReservoir: { min: 1.2, max: 2.0 },
-    ecBac: { min: 1.2, max: 2.0 },
-    oxygenReservoir: { min: 80, max: 100 },
-    oxygenBac: { min: 80, max: 100 },
-    temperature: { min: 18, max: 26 },
-    humidity: { min: 40, max: 70 },
-    waterLevelReservoir: { min: 20, max: 100 },
-    waterLevelBac: { min: 10, max: 45 },
-  });
 
-  // Handlers pour l'import/export CSV des bornes
-  const handleExportPlantBoundsCSV = () => {
-    const rows = ["Plant;Parameter;Min;Max"];
-    Object.entries(plantBornes).forEach(([plant, params]) => {
-      Object.entries(
-        params as { [key: string]: { min: number; max: number } }
-      ).forEach(([param, val]) => {
-        rows.push(`${plant};${param};${val.min};${val.max}`);
-      });
-    });
-    const csv = rows.join("\n");
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "plant_bounds.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-  const handleImportPlantBoundsCSV = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      const lines = text.split("\n").slice(1);
-      const newPlantBornes: any = { ...plantBornes };
-      lines.forEach((line) => {
-        const [plant, param, min, max] = line.split(";");
-        if (plant && param && min !== undefined && max !== undefined) {
-          const key = plant as keyof typeof newPlantBornes;
-          if (!newPlantBornes[key]) {
-            newPlantBornes[key] = {};
-          }
-          newPlantBornes[key][param] = {
-            min: parseFloat(min),
-            max: parseFloat(max),
-          };
-        }
-      });
-      setPlantBornes(newPlantBornes);
-      alert("Bornes importées avec succès !");
-    };
-    reader.readAsText(file, "UTF-8");
-  };
+
+
 
   // Interface des props pour GraphiquesTab
 interface GraphiquesTabProps {
@@ -877,58 +822,33 @@ interface GraphiquesTabProps {
         {activeTab === "Commandes" && (
           <div className="flex flex-col gap-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Bloc Actions rapides avec sélecteur de plante */}
+              {/* Bloc Actions rapides */}
               <div className="flex justify-center">
                 <div className="bg-white rounded-xl shadow p-10 flex flex-col gap-8 border border-gray-300 min-w-[350px] max-w-lg w-full">
                   <h2 className="text-xl font-bold text-gray-800 mb-2 text-center">
                     Actions rapides
                   </h2>
-                  {/* Sélecteur de plante */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Configuration par défaut
-                    </label>
-                    <div className="flex gap-2 items-center">
-                      <select
-                        className="border rounded px-2 py-1 w-full"
-                        value={selectedPlant}
-                        onChange={(e) =>
-                          setSelectedPlant(e.target.value)
-                        }
-                      >
-                        <option value="">-- Choisir une configuration --</option>
-                        {Object.keys(plantBornes).map((plant) => (
-                          <option key={plant} value={plant}>
-                            {plant.charAt(0).toUpperCase() + plant.slice(1)}
-                          </option>
-                        ))}
-                      </select>
+                  {/* Sous-section Actionneurs */}
+                  <div className="flex flex-col gap-4 border rounded-lg p-4 mb-4 bg-blue-50 border-blue-200">
+                    <h3 className="text-lg font-semibold text-blue-700 mb-2">Actionneurs</h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-700">Forcer les actionneurs</span>
                       <button
-                        type="button"
-                        className="ml-2 px-2 py-1 bg-green-100 text-green-800 border border-green-600 rounded font-semibold hover:bg-green-200"
-                        onClick={() => {
-                          setNewPlantName("");
-                          setNewPlantBornes({
-                            phReservoir: { min: 5.5, max: 6.5 },
-                            phBac: { min: 5.5, max: 6.5 },
-                            ecReservoir: { min: 1.2, max: 2.0 },
-                            ecBac: { min: 1.2, max: 2.0 },
-                            oxygenReservoir: { min: 80, max: 100 },
-                            oxygenBac: { min: 80, max: 100 },
-                            temperature: { min: 18, max: 26 },
-                            humidity: { min: 40, max: 70 },
-                            waterLevelReservoir: { min: 20, max: 100 },
-                            waterLevelBac: { min: 10, max: 45 },
-                          });
-                          setShowAddPlantModal(true);
-                        }}
-                        title="Ajouter une nouvelle plante"
+                        className="px-4 py-1 border-2 border-blue-600 text-blue-600 rounded font-semibold bg-white hover:bg-blue-100"
+                        onClick={() => setShowActuatorsModal(true)}
                       >
-                        + Ajouter une configuration
+                        Ouvrir
                       </button>
                     </div>
+                    {/* Modale actionneurs (valves, etc.) */}
+                    <ActuatorsModal
+                      show={showActuatorsModal}
+                      onClose={() => setShowActuatorsModal(false)}
+                      actuators={actuators}
+                      onToggle={handleToggleActuator}
+                    />
                   </div>
-                  {/* Actions rapides */}
+                  {/* Autres actions rapides */}
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-gray-700">Ajouter des nutriments</span>
@@ -968,11 +888,10 @@ interface GraphiquesTabProps {
                     .map(([key, val]) => {
                       const typedKey = key as keyof typeof editableBornes;
                       return (
-                          <div key={key} className="flex flex-wrap items-center gap-4">
+                        <div key={key} className="flex flex-wrap items-center gap-4">
                           <span className="w-60 font-medium text-gray-700">
                             {PARAM_LABELS[key] || key}
                           </span>
-
                           <div className="flex items-center gap-1">
                             <label className="text-sm">Min</label>
                             <input
@@ -991,7 +910,6 @@ interface GraphiquesTabProps {
                               }
                             />
                           </div>
-
                           <div className="flex items-center gap-1">
                             <label className="text-sm">Max</label>
                             <input
@@ -1017,56 +935,20 @@ interface GraphiquesTabProps {
                     type="button"
                     className="mt-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700 self-end"
                     onClick={() => {
-                      if (selectedPlant) {
-                        setPlantBornes((prev: any) => ({
-                          ...prev,
-                          [selectedPlant]: { ...editableBornes },
-                        }));
-                        alert(
-                          "Bornes enregistrées pour la configuration sélectionnée !"
-                        );
-                      }
+                      // Ici tu pourras appeler la route backend pour enregistrer les bornes globales
+                      alert("Bornes enregistrées ! (TODO: envoyer au backend)");
                     }}
                   >
                     Enregistrer
                   </button>
+                  <PlantBoundsCSVButtons
+                    editableBornes={editableBornes}
+                    setEditableBornes={setEditableBornes}
+                  />
                 </form>
-                <PlantBoundsCSVButtons
-                  plantBornes={plantBornes}
-                  setPlantBornes={setPlantBornes}
-                  selectedPlant={selectedPlant}
-                  setEditableBornes={setEditableBornes}
-                  editableBornes={editableBornes}
-                />
               </div>
             </div>
-            {/* Modal d'ajout de plante */}
-            <AddPlantModal
-              show={showAddPlantModal}
-              onClose={() => setShowAddPlantModal(false)}
-              plantName={newPlantName}
-              setPlantName={setNewPlantName}
-              plantBornes={newPlantBornes}
-              setPlantBornes={setNewPlantBornes}
-              paramLabels={PARAM_LABELS}
-              onSubmit={() => {
-                const name = newPlantName.trim().toLowerCase();
-                if (!name) {
-                  alert("Veuillez saisir un nom de configuration.");
-                  return;
-                }
-                if (plantBornes[name]) {
-                  alert("Cette configuration existe déjà.");
-                  return;
-                }
-                setPlantBornes((prev: any) => ({
-                  ...prev,
-                  [name]: { ...newPlantBornes },
-                }));
-                setNewPlantName("");
-                setShowAddPlantModal(false);
-              }}
-            />
+            {/* ...suppression du modal d'ajout de plante... */}
             {/* InfoBox d'implémentation */}
             <InfoBox />
           </div>
