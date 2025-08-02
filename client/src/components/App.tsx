@@ -77,22 +77,53 @@ function mapSensorData(rawData: any[]): SensorData[] {
     if (capteur === "Climat" && param === "temperature") key = "temperature";
     else if (capteur === "Climat" && param === "humidity") key = "humidity";
     else if (capteur === "EC Reservoir" && param === "ec") key = "ecReservoir";
-    else if (capteur === "DO Reservoir" && param === "do") key = "oxygenReservoir";
+    else if (capteur === "DO Reservoir" && param === "do")
+      key = "oxygenReservoir";
     else if (capteur === "pH Reservoir" && param === "pH") key = "phReservoir";
-    else if (capteur === "Niveau Eau Reservoir" && param === "niveau") key = "waterLevelReservoir";
+    else if (capteur === "Niveau Eau Reservoir" && param === "niveau")
+      key = "waterLevelReservoir";
     else if (capteur === "EC Bac" && param === "ec") key = "ecBac";
     else if (capteur === "DO Bac" && param === "do") key = "oxygenBac";
     else if (capteur === "pH Bac" && param === "pH") key = "phBac";
-    else if (capteur === "Niveau Eau Bac" && param === "niveau") key = "waterLevelBac";
-    else if (capteur === "Thermocouple Reservoir" && param === "temperature") key = "temperatureReservoir";
-    else if (capteur === "Thermocouple Bac" && param === "temperature") key = "temperatureBac";
+    else if (capteur === "Niveau Eau Bac" && param === "niveau")
+      key = "waterLevelBac";
+    else if (capteur === "Thermocouple Reservoir" && param === "temperature")
+      key = "temperatureReservoir";
+    else if (capteur === "Thermocouple Bac" && param === "temperature")
+      key = "temperatureBac";
     if (key) grouped[timestamp][key] = valeur;
   });
   // Retourne un tableau trié par timestamp
-  return Object.values(grouped).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  return Object.values(grouped).sort(
+    (a: any, b: any) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
 }
 
 function App() {
+  // Stocke l'état initial des bornes pour la comparaison
+  const initialBornesRef = useRef<any>(null);
+  // ...déclaration des états...
+  // Mapping clé graphique -> { sensor_name, value_name }
+  const keyToSensorValue = {
+    phReservoir: { sensor_name: "pH Reservoir", value_name: "pH" },
+    phBac: { sensor_name: "pH Bac", value_name: "pH" },
+    ecReservoir: { sensor_name: "EC Reservoir", value_name: "ec" },
+    ecBac: { sensor_name: "EC Bac", value_name: "ec" },
+    oxygenReservoir: { sensor_name: "DO Reservoir", value_name: "do" },
+    oxygenBac: { sensor_name: "DO Bac", value_name: "do" },
+    temperature: { sensor_name: "Climat", value_name: "temperature" },
+    temperatureReservoir: {
+      sensor_name: "Thermocouple Reservoir",
+      value_name: "temperature",
+    },
+    temperatureBac: {
+      sensor_name: "Thermocouple Bac",
+      value_name: "temperature",
+    },
+    humidity: { sensor_name: "Climat", value_name: "humidity" },
+    // Ajoute d'autres mappings si besoin
+  };
   // État pour la modale des actionneurs (valves, etc.)
   const [showActuatorsModal, setShowActuatorsModal] = useState(false);
   // Pour le futur : à remplacer par un fetch backend
@@ -133,36 +164,70 @@ function App() {
     [key: string]: { min: number; max: number };
   };
   const [editableBornes, setEditableBornes] = useState<BornesType>({});
-
+  // Stocke l'état initial des bornes au premier montage
+  useEffect(() => {
+    if (
+      editableBornes &&
+      !initialBornesRef.current &&
+      Object.keys(editableBornes).length > 0
+    ) {
+      initialBornesRef.current = JSON.parse(JSON.stringify(editableBornes));
+    }
+  }, [editableBornes]);
   // Récupère les bornes min/max dynamiquement depuis l'API Flask /api/config
   useEffect(() => {
     const fetchBornes = async () => {
       try {
-        const res = await fetch('/api/config');
+        const res = await fetch("/api/config");
         const text = await res.text();
-        console.log('[DEBUG] Réponse brute /api/config:', text);
+        console.log("[DEBUG] Réponse brute /api/config:", text);
         const data = JSON.parse(text);
         // Construction du mapping capteur/paramètre -> clé de graphique
         // Ex: { temperature: { min: 15, max: 30 }, ... }
         const bornes: Record<string, { min: number; max: number }> = {};
-        const sensors = data && data.config && data.config.sensors ? data.config.sensors : [];
+        const sensors =
+          data && data.config && data.config.sensors ? data.config.sensors : [];
         sensors.forEach((sensor: any) => {
           if (sensor.values && Array.isArray(sensor.values)) {
             sensor.values.forEach((val: any) => {
               // Mappe le nom du capteur + paramètre vers la clé utilisée dans chartList
               let key = "";
-              if (sensor.name === "Climat" && val.name === "temperature") key = "temperature";
-              else if (sensor.name === "Climat" && val.name === "humidity") key = "humidity";
-              else if (sensor.name === "EC Reservoir" && val.name === "ec") key = "ecReservoir";
-              else if (sensor.name === "DO Reservoir" && val.name === "do") key = "oxygenReservoir";
-              else if (sensor.name === "pH Reservoir" && val.name === "pH") key = "phReservoir";
-              else if (sensor.name === "Niveau Eau Reservoir" && val.name === "niveau") key = "waterLevelReservoir";
-              else if (sensor.name === "EC Bac" && val.name === "ec") key = "ecBac";
-              else if (sensor.name === "DO Bac" && val.name === "do") key = "oxygenBac";
-              else if (sensor.name === "pH Bac" && val.name === "pH") key = "phBac";
-              else if (sensor.name === "Niveau Eau Bac" && val.name === "niveau") key = "waterLevelBac";
-              else if (sensor.name === "Thermocouple Reservoir" && val.name === "temperature") key = "temperatureReservoir";
-              else if (sensor.name === "Thermocouple Bac" && val.name === "temperature") key = "temperatureBac";
+              if (sensor.name === "Climat" && val.name === "temperature")
+                key = "temperature";
+              else if (sensor.name === "Climat" && val.name === "humidity")
+                key = "humidity";
+              else if (sensor.name === "EC Reservoir" && val.name === "ec")
+                key = "ecReservoir";
+              else if (sensor.name === "DO Reservoir" && val.name === "do")
+                key = "oxygenReservoir";
+              else if (sensor.name === "pH Reservoir" && val.name === "pH")
+                key = "phReservoir";
+              else if (
+                sensor.name === "Niveau Eau Reservoir" &&
+                val.name === "niveau"
+              )
+                key = "waterLevelReservoir";
+              else if (sensor.name === "EC Bac" && val.name === "ec")
+                key = "ecBac";
+              else if (sensor.name === "DO Bac" && val.name === "do")
+                key = "oxygenBac";
+              else if (sensor.name === "pH Bac" && val.name === "pH")
+                key = "phBac";
+              else if (
+                sensor.name === "Niveau Eau Bac" &&
+                val.name === "niveau"
+              )
+                key = "waterLevelBac";
+              else if (
+                sensor.name === "Thermocouple Reservoir" &&
+                val.name === "temperature"
+              )
+                key = "temperatureReservoir";
+              else if (
+                sensor.name === "Thermocouple Bac" &&
+                val.name === "temperature"
+              )
+                key = "temperatureBac";
               if (key) {
                 bornes[key] = { min: val.lower_limit, max: val.upper_limit };
               }
@@ -172,24 +237,32 @@ function App() {
         setEditableBornes(bornes);
         // Debug : afficher les clés présentes et attendues
         const expected = [
-          "temperature", "humidity", "ecReservoir", "phReservoir", "oxygenReservoir",
-          "ecBac", "phBac", "oxygenBac", "waterLevelReservoir", "waterLevelBac", "temperatureReservoir", "temperatureBac"
+          "temperature",
+          "humidity",
+          "ecReservoir",
+          "phReservoir",
+          "oxygenReservoir",
+          "ecBac",
+          "phBac",
+          "oxygenBac",
+          "waterLevelReservoir",
+          "waterLevelBac",
+          "temperatureReservoir",
+          "temperatureBac",
         ];
         console.log("[DEBUG] Clés bornes récupérées:", Object.keys(bornes));
         console.log("[DEBUG] Clés attendues:", expected);
-        expected.forEach(key => {
+        expected.forEach((key) => {
           if (!bornes[key]) {
             console.warn(`[DEBUG] Borne manquante pour : ${key}`);
           }
         });
       } catch (error) {
-        console.error('Erreur lors de la récupération des bornes:', error);
+        console.error("Erreur lors de la récupération des bornes:", error);
       }
     };
     fetchBornes();
   }, []);
-
-
 
   // Liste des graphiques disponibles
   const chartList = [
@@ -289,19 +362,36 @@ function App() {
         };
       }
       // Mapping selon capteur/param
-      if (capteur === "Climat" && param === "temperature") grouped[timestamp].temperature = valeur;
-      if (capteur === "Climat" && param === "humidity") grouped[timestamp].humidity = valeur;
-      if (capteur === "EC Reservoir" && param === "ec") grouped[timestamp].ecReservoir = typeof valeur === "string" ? parseFloat(valeur) : valeur;
-      if (capteur === "pH Reservoir" && param === "pH") grouped[timestamp].phReservoir = valeur;
-      if (capteur === "DO Reservoir" && param === "do") grouped[timestamp].oxygenReservoir = valeur;
-      if (capteur === "EC Bac" && param === "ec") grouped[timestamp].ecBac = typeof valeur === "string" ? parseFloat(valeur) : valeur;
-      if (capteur === "pH Bac" && param === "pH") grouped[timestamp].phBac = valeur;
-      if (capteur === "DO Bac" && param === "do") grouped[timestamp].oxygenBac = valeur;
-      if (capteur === "Thermocouple Reservoir" && param === "temperature") grouped[timestamp].temperatureReservoir = typeof valeur === "string" ? parseFloat(valeur) : valeur;
-      if (capteur === "Thermocouple Bac" && param === "temperature") grouped[timestamp].temperatureBac = typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "Climat" && param === "temperature")
+        grouped[timestamp].temperature = valeur;
+      if (capteur === "Climat" && param === "humidity")
+        grouped[timestamp].humidity = valeur;
+      if (capteur === "EC Reservoir" && param === "ec")
+        grouped[timestamp].ecReservoir =
+          typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "pH Reservoir" && param === "pH")
+        grouped[timestamp].phReservoir = valeur;
+      if (capteur === "DO Reservoir" && param === "do")
+        grouped[timestamp].oxygenReservoir = valeur;
+      if (capteur === "EC Bac" && param === "ec")
+        grouped[timestamp].ecBac =
+          typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "pH Bac" && param === "pH")
+        grouped[timestamp].phBac = valeur;
+      if (capteur === "DO Bac" && param === "do")
+        grouped[timestamp].oxygenBac = valeur;
+      if (capteur === "Thermocouple Reservoir" && param === "temperature")
+        grouped[timestamp].temperatureReservoir =
+          typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "Thermocouple Bac" && param === "temperature")
+        grouped[timestamp].temperatureBac =
+          typeof valeur === "string" ? parseFloat(valeur) : valeur;
     });
     // Retourne trié par timestamp croissant
-    return Object.values(grouped).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    return Object.values(grouped).sort(
+      (a: any, b: any) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
   }
 
   useEffect(() => {
@@ -309,7 +399,7 @@ function App() {
       try {
         const res = await fetch(`/api/sensors/data`);
         const text = await res.text();
-        console.log('Réponse brute /api/sensors/data:', text);
+        console.log("Réponse brute /api/sensors/data:", text);
         const data = JSON.parse(text);
         setSensorData(mapSensorData(data));
         // const resWater = await fetch(`/api/water-level`);
@@ -328,7 +418,9 @@ function App() {
   function getEventAnnotations(_: string) {
     const annotationsObj: Record<string, any> = {};
     if (sensorData.length > 0 && selectedHours > 0) {
-      const lastTimestamp = new Date(sensorData[sensorData.length - 1].timestamp).getTime();
+      const lastTimestamp = new Date(
+        sensorData[sensorData.length - 1].timestamp
+      ).getTime();
       const msRange = selectedHours * 60 * 60 * 1000;
       const startTime = lastTimestamp - msRange;
       events.forEach((ev: any, idx: number) => {
@@ -344,7 +436,7 @@ function App() {
             borderColor: lineColor,
             borderWidth: isSelected ? 3 : 2,
             label: {
-              display: false
+              display: false,
             },
           };
         }
@@ -362,7 +454,9 @@ function App() {
     // Filtrer les données selon la période sélectionnée
     let filtered = sensorData;
     if (sensorData.length > 0 && selectedHours > 0) {
-      const lastTimestamp = new Date(sensorData[sensorData.length - 1].timestamp).getTime();
+      const lastTimestamp = new Date(
+        sensorData[sensorData.length - 1].timestamp
+      ).getTime();
       const msRange = selectedHours * 60 * 60 * 1000;
       filtered = sensorData.filter((data) => {
         const t = new Date(data.timestamp).getTime();
@@ -470,7 +564,9 @@ function App() {
     // Calcule min/max Y dynamiquement comme getChartData
     let filtered = sensorData;
     if (sensorData.length > 0 && selectedHours > 0) {
-      const lastTimestamp = new Date(sensorData[sensorData.length - 1].timestamp).getTime();
+      const lastTimestamp = new Date(
+        sensorData[sensorData.length - 1].timestamp
+      ).getTime();
       const msRange = selectedHours * 60 * 60 * 1000;
       filtered = sensorData.filter((data) => {
         const t = new Date(data.timestamp).getTime();
@@ -483,7 +579,10 @@ function App() {
     const values: number[] = filtered
       .map((data: any) => {
         let v = (data as any)[dataKey];
-        if ((dataKey === "ecReservoir" || dataKey === "ecBac") && typeof v === "string") {
+        if (
+          (dataKey === "ecReservoir" || dataKey === "ecBac") &&
+          typeof v === "string"
+        ) {
           const match = v.match(/^[0-9.]+/);
           v = match ? parseFloat(match[0]) : NaN;
         }
@@ -536,7 +635,7 @@ function App() {
   useEffect(() => {
     const fetchEventTypes = async () => {
       try {
-        const res = await fetch('/api/event_type');
+        const res = await fetch("/api/event_type");
         const types = await res.json();
         setEventTypes(types);
       } catch (e) {
@@ -549,7 +648,7 @@ function App() {
   // Récupère la liste des événements depuis le backend
   const fetchEvents = async () => {
     try {
-      const res = await fetch('/api/event');
+      const res = await fetch("/api/event");
       const data = await res.json();
       setEvents(data);
     } catch (e) {
@@ -570,17 +669,20 @@ function App() {
     }
     try {
       // Si pas de date/heure, utiliser la date actuelle
-      const timestamp = eventTime && eventTime.length > 0 ? eventTime : new Date().toISOString();
+      const timestamp =
+        eventTime && eventTime.length > 0
+          ? eventTime
+          : new Date().toISOString();
       const payload = {
         event_name: selectedEventType,
         event_type: selectedEventType,
         timestamp,
-        event_note: eventNote
+        event_note: eventNote,
       };
-      const res = await fetch('/api/event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const res = await fetch("/api/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         setSelectedEventType("");
@@ -589,14 +691,14 @@ function App() {
         fetchEvents();
       } else {
         const err = await res.json();
-        alert("Erreur lors de l'ajout de l'événement : " + (err.error || res.status));
+        alert(
+          "Erreur lors de l'ajout de l'événement : " + (err.error || res.status)
+        );
       }
     } catch (e) {
       alert("Erreur lors de l'ajout de l'événement.");
     }
   };
-
-
 
   // Fonction pour envoyer la commande flush au serveur
   const handleFlushReservoir = async () => {
@@ -634,24 +736,24 @@ function App() {
     temperatureBac: "Température bac [°C]",
     humidity: "Humidité ambiante [%]",
   };
-
-
-
-
-
   // Interface des props pour GraphiquesTab
-interface GraphiquesTabProps {
-  selectedHours: number;
-  setSelectedHours: React.Dispatch<React.SetStateAction<number>>;
-  chartList: any[];
-  selectedCharts: string[];
-  handleChartSelect: (key: string) => void;
-  chartRefs: React.MutableRefObject<Record<string, any>>;
-  getChartData: (dataKey: string, label: string, color: string) => any;
-  getChartOptionsWithBounds: (dataKey: string, label: string, color: string, category?: string) => any;
-  EventBadgeOverlay: any;
-  sensorData: SensorData[];
-}
+  interface GraphiquesTabProps {
+    selectedHours: number;
+    setSelectedHours: React.Dispatch<React.SetStateAction<number>>;
+    chartList: any[];
+    selectedCharts: string[];
+    handleChartSelect: (key: string) => void;
+    chartRefs: React.MutableRefObject<Record<string, any>>;
+    getChartData: (dataKey: string, label: string, color: string) => any;
+    getChartOptionsWithBounds: (
+      dataKey: string,
+      label: string,
+      color: string,
+      category?: string
+    ) => any;
+    EventBadgeOverlay: any;
+    sensorData: SensorData[];
+  }
 
   // --- ASSEMBLAGE PRINCIPAL DES COMPOSANTS ---
   return (
@@ -697,7 +799,10 @@ interface GraphiquesTabProps {
         onSubmit={(nutrients) => {
           setShowNutrientModal(false);
           // Ici tu peux gérer l'envoi des valeurs au backend ou afficher une confirmation
-          alert("Nutriments ajoutés : " + nutrients.map(n => `${n.type}: ${n.value}ml`).join(", "));
+          alert(
+            "Nutriments ajoutés : " +
+              nutrients.map((n) => `${n.type}: ${n.value}ml`).join(", ")
+          );
         }}
       />
       <ConfirmDrainModal
@@ -714,28 +819,37 @@ interface GraphiquesTabProps {
           <div className="flex flex-col gap-8">
             {/* Groupe Ambiance */}
             <AmbianceSection
-              latestData={latestData && { temperature: latestData.temperature, humidity: latestData.humidity }}
+              latestData={
+                latestData && {
+                  temperature: latestData.temperature,
+                  humidity: latestData.humidity,
+                }
+              }
               editableBornes={editableBornes as any}
             />
             {/* Groupe Réservoir */}
             <ReservoirSection
-              latestData={latestData && {
-                ecReservoir: latestData.ecReservoir,
-                phReservoir: latestData.phReservoir,
-                oxygenReservoir: latestData.oxygenReservoir,
-                temperatureReservoir: latestData.temperatureReservoir
-              }}
+              latestData={
+                latestData && {
+                  ecReservoir: latestData.ecReservoir,
+                  phReservoir: latestData.phReservoir,
+                  oxygenReservoir: latestData.oxygenReservoir,
+                  temperatureReservoir: latestData.temperatureReservoir,
+                }
+              }
               waterLevel={waterLevel}
               editableBornes={editableBornes as any}
             />
             {/* Groupe Bac du système */}
             <BacSection
-              latestData={latestData && {
-                ecBac: latestData.ecBac,
-                phBac: latestData.phBac,
-                oxygenBac: latestData.oxygenBac,
-                temperatureBac: latestData.temperatureBac
-              }}
+              latestData={
+                latestData && {
+                  ecBac: latestData.ecBac,
+                  phBac: latestData.phBac,
+                  oxygenBac: latestData.oxygenBac,
+                  temperatureBac: latestData.temperatureBac,
+                }
+              }
               waterLevel={waterLevel}
               editableBornes={editableBornes as any}
             />
@@ -745,16 +859,22 @@ interface GraphiquesTabProps {
         {activeTab === "Graphiques" && (
           <div>
             {/* Formulaire d'ajout d'événement */}
-            <form className="flex gap-4 items-end mb-4" onSubmit={handleAddEvent}>
+            <form
+              className="flex gap-4 items-end mb-4"
+              onSubmit={handleAddEvent}
+            >
               <div className="flex flex-col">
                 <label className="text-sm font-medium">Type d'événement</label>
                 <select
                   className="border rounded px-2 py-1"
                   value={selectedEventType}
-                  onChange={e => setSelectedEventType(e.target.value)}>
+                  onChange={(e) => setSelectedEventType(e.target.value)}
+                >
                   <option value="">Sélectionner...</option>
-                  {eventTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                  {eventTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -764,7 +884,7 @@ interface GraphiquesTabProps {
                   type="datetime-local"
                   className="border rounded px-2 py-1"
                   value={eventTime}
-                  onChange={e => setEventTime(e.target.value)}
+                  onChange={(e) => setEventTime(e.target.value)}
                 />
               </div>
               <div className="flex flex-col">
@@ -774,13 +894,20 @@ interface GraphiquesTabProps {
                   className="border rounded px-2 py-1"
                   placeholder="Commentaire (optionnel)"
                   value={eventNote}
-                  onChange={e => setEventNote(e.target.value)}
+                  onChange={(e) => setEventNote(e.target.value)}
                 />
               </div>
-              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700">
+              <button
+                type="submit"
+                className="bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700"
+              >
                 Ajouter événement
               </button>
-              <button type="button" className="ml-2 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={fetchEvents}>
+              <button
+                type="button"
+                className="ml-2 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                onClick={fetchEvents}
+              >
                 Rafraîchir
               </button>
             </form>
@@ -796,14 +923,20 @@ interface GraphiquesTabProps {
                 </thead>
                 <tbody>
                   {events.map((ev, idx) => (
-                    <tr 
+                    <tr
                       key={idx}
-                      onClick={() => setSelectedEventId(selectedEventId === idx ? null : idx)}
+                      onClick={() =>
+                        setSelectedEventId(selectedEventId === idx ? null : idx)
+                      }
                       className={`cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedEventId === idx ? 'bg-blue-50' : ''
+                        selectedEventId === idx ? "bg-blue-50" : ""
                       }`}
                     >
-                      <td className="px-2 py-1 border">{ev.timestamp ? new Date(ev.timestamp).toLocaleString() : "-"}</td>
+                      <td className="px-2 py-1 border">
+                        {ev.timestamp
+                          ? new Date(ev.timestamp).toLocaleString()
+                          : "-"}
+                      </td>
                       <td className="px-2 py-1 border">{ev.event_type}</td>
                       <td className="px-2 py-1 border">{ev.event_note}</td>
                     </tr>
@@ -811,7 +944,7 @@ interface GraphiquesTabProps {
                 </tbody>
               </table>
             </div>
-            
+
             <GraphiquesTab
               selectedHours={selectedHours}
               setSelectedHours={setSelectedHours}
@@ -838,9 +971,13 @@ interface GraphiquesTabProps {
                   </h2>
                   {/* Sous-section Actionneurs */}
                   <div className="flex flex-col gap-4 border rounded-lg p-4 mb-4 bg-blue-50 border-blue-200">
-                    <h3 className="text-lg font-semibold text-blue-700 mb-2">Actionneurs</h3>
+                    <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                      Actionneurs
+                    </h3>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">Forcer les actionneurs</span>
+                      <span className="font-medium text-gray-700">
+                        Forcer les actionneurs
+                      </span>
                       <button
                         className="px-4 py-1 border-2 border-blue-600 text-blue-600 rounded font-semibold bg-white hover:bg-blue-100"
                         onClick={() => setShowActuatorsModal(true)}
@@ -859,20 +996,48 @@ interface GraphiquesTabProps {
                   {/* Autres actions rapides */}
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">Ajouter des nutriments</span>
-                      <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100" onClick={() => setShowNutrientModal(true)}>Ajouter</button>
+                      <span className="font-medium text-gray-700">
+                        Ajouter des nutriments
+                      </span>
+                      <button
+                        className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100"
+                        onClick={() => setShowNutrientModal(true)}
+                      >
+                        Ajouter
+                      </button>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">Remplir le réservoir du système</span>
-                      <button className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100" onClick={() => setShowFillReservoir(true)}>Remplir</button>
+                      <span className="font-medium text-gray-700">
+                        Remplir le réservoir du système
+                      </span>
+                      <button
+                        className="px-4 py-1 border-2 border-black rounded bg-white font-semibold hover:bg-gray-100"
+                        onClick={() => setShowFillReservoir(true)}
+                      >
+                        Remplir
+                      </button>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">Vidanger le réservoir</span>
-                      <button className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50" onClick={() => setShowConfirmDrain(true)}>Vidanger</button>
+                      <span className="font-medium text-gray-700">
+                        Vidanger le réservoir
+                      </span>
+                      <button
+                        className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50"
+                        onClick={() => setShowConfirmDrain(true)}
+                      >
+                        Vidanger
+                      </button>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-700">Vidanger le bac</span>
-                      <button className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50" onClick={handleFlushReservoir}>Vidanger</button>
+                      <span className="font-medium text-gray-700">
+                        Vidanger le bac
+                      </span>
+                      <button
+                        className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50"
+                        onClick={handleFlushReservoir}
+                      >
+                        Vidanger
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -896,7 +1061,10 @@ interface GraphiquesTabProps {
                     .map(([key, val]) => {
                       const typedKey = key as keyof typeof editableBornes;
                       return (
-                        <div key={key} className="flex flex-wrap items-center gap-4">
+                        <div
+                          key={key}
+                          className="flex flex-wrap items-center gap-4"
+                        >
                           <span className="w-60 font-medium text-gray-700">
                             {PARAM_LABELS[key] || key}
                           </span>
@@ -942,9 +1110,64 @@ interface GraphiquesTabProps {
                   <button
                     type="button"
                     className="mt-4 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700 self-end"
-                    onClick={() => {
-                      // Ici tu pourras appeler la route backend pour enregistrer les bornes globales
-                      alert("Bornes enregistrées ! (TODO: envoyer au backend)");
+                    onClick={async () => {
+                      const keyMap = keyToSensorValue as Record<
+                        string,
+                        { sensor_name: string; value_name: string }
+                      >;
+
+                      // Utilise la référence de l'état initial
+                      const initialBornes = initialBornesRef.current || {};
+
+                      // Filtre uniquement les bornes modifiées
+                      const changedBornes = Object.entries(
+                        editableBornes
+                      ).filter(([key, val]) => {
+                        if (!keyMap[key]) return false;
+                        const initial = initialBornes[key];
+                        if (!initial) return true; // Si pas d'initial, considérer comme modifié
+                        return (
+                          initial.min !== val.min || initial.max !== val.max
+                        );
+                      });
+
+                      if (changedBornes.length === 0) {
+                        alert("Aucune borne modifiée à enregistrer.");
+                        return;
+                      }
+
+                      const promises = changedBornes.map(([key, val]) => {
+                        const mapping = keyMap[key];
+                        const payload = {
+                          sensor_name: mapping.sensor_name,
+                          value_name: mapping.value_name,
+                          lower_limit: val.min,
+                          upper_limit: val.max,
+                        };
+                        return fetch("/api/config/bornes", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(payload),
+                        });
+                      });
+
+                      const results = await Promise.allSettled(promises);
+                      const successCount = results.filter(
+                        (r) => r.status === "fulfilled" && r.value.ok
+                      ).length;
+                      const errorCount = results.length - successCount;
+
+                      if (successCount > 0 && errorCount === 0) {
+                        alert(
+                          "Toutes les bornes ont été enregistrées avec succès."
+                        );
+                      } else if (successCount > 0 && errorCount > 0) {
+                        alert(
+                          `Certaines bornes ont été enregistrées, mais ${errorCount} ont échoué.`
+                        );
+                      } else {
+                        alert("Erreur lors de l'enregistrement des bornes.");
+                      }
                     }}
                   >
                     Enregistrer
