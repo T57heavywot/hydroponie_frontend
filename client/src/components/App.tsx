@@ -124,8 +124,10 @@ function App() {
   const [eventTypes, setEventTypes] = useState<string[]>([]);
   // Sélection du type d'événement (obligatoire)
   const [selectedEventType, setSelectedEventType] = useState<string>("");
-  // Date/heure de l'événement (obligatoire)
+  // Date/heure de l'événement (optionnelle)
   const [eventTime, setEventTime] = useState("");
+  // Note de l'événement
+  const [eventNote, setEventNote] = useState("");
 
   type BornesType = {
     [key: string]: { min: number; max: number };
@@ -561,15 +563,18 @@ function App() {
   // Ajout d'un événement (POST)
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEventType || !eventTime) {
-      alert("Veuillez sélectionner un type et une date/heure.");
+    if (!selectedEventType) {
+      alert("Veuillez sélectionner un type d'événement.");
       return;
     }
     try {
+      // Si pas de date/heure, utiliser la date actuelle
+      const timestamp = eventTime && eventTime.length > 0 ? eventTime : new Date().toISOString();
       const payload = {
         event_name: selectedEventType,
         event_type: selectedEventType,
-        timestamp: eventTime // non utilisé côté backend, mais utile pour l'UI
+        timestamp,
+        event_note: eventNote
       };
       const res = await fetch('/api/event', {
         method: 'POST',
@@ -579,6 +584,7 @@ function App() {
       if (res.ok) {
         setSelectedEventType("");
         setEventTime("");
+        setEventNote("");
         fetchEvents();
       } else {
         const err = await res.json();
@@ -758,7 +764,6 @@ interface GraphiquesTabProps {
                   className="border rounded px-2 py-1"
                   value={eventTime}
                   onChange={e => setEventTime(e.target.value)}
-                  required
                 />
               </div>
               <div className="flex flex-col">
@@ -767,6 +772,8 @@ interface GraphiquesTabProps {
                   type="text"
                   className="border rounded px-2 py-1"
                   placeholder="Commentaire (optionnel)"
+                  value={eventNote}
+                  onChange={e => setEventNote(e.target.value)}
                 />
               </div>
               <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700">
