@@ -126,18 +126,37 @@ function App() {
   };
   // État pour la modale des actionneurs (valves, etc.)
   const [showActuatorsModal, setShowActuatorsModal] = useState(false);
-  // Pour le futur : à remplacer par un fetch backend
-  const [actuators, setActuators] = useState([
-    { id: "valve1", name: "Valve 1", isOpen: false },
-    { id: "valve2", name: "Valve 2", isOpen: false },
-  ]);
+  // Actionneurs dynamiques récupérés depuis l'API config
+  const [actuators, setActuators] = useState<any[]>([]);
+
+  // Récupère la config des actionneurs dynamiquement
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch("/api/config");
+        const data = await res.json();
+        const activators = (data.config && data.config.activator) || [];
+        // Ajoute un champ isOpen par défaut (à adapter si tu as un backend pour l'état)
+        setActuators(
+          activators.map((a: any, idx: number) => ({
+            ...a,
+            id: a.name || `actuator${idx}`,
+            isOpen: false,
+          }))
+        );
+      } catch (e) {
+        setActuators([]);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   // Handler pour ouvrir/fermer un actionneur
   const handleToggleActuator = (id: string, open: boolean) => {
     setActuators((prev) =>
       prev.map((a) => (a.id === id ? { ...a, isOpen: open } : a))
     );
-    // TODO: Appeler le backend pour ouvrir/fermer l'actionneur
+    // TODO: Appeler le backend pour ouvrir/fermer l'actionneur dynamiquement
   };
   // États pour les popups
   const [showFillReservoir, setShowFillReservoir] = useState(false);
@@ -1179,8 +1198,6 @@ function App() {
                 </form>
               </div>
             </div>
-            {/* ...suppression du modal d'ajout de plante... */}
-            {/* InfoBox d'implémentation */}
             <InfoBox />
           </div>
         )}

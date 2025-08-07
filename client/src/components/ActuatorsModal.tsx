@@ -2,7 +2,12 @@ import React, { useState } from "react";
 
 interface Actuator {
   id: string;
-  name: string;
+  name?: string;
+  model?: string;
+  link?: string;
+  pin?: string;
+  ip_address?: string;
+  address?: string;
   isOpen: boolean;
 }
 
@@ -25,18 +30,29 @@ const ActuatorsModal: React.FC<ActuatorsModalProps> = ({ show, onClose, actuator
         <h2 className="text-xl font-bold mb-4 text-center">Contrôle des actionneurs</h2>
         <div className="flex flex-col gap-4">
           {actuators.map((actuator) => (
-            <div key={actuator.id} className="flex items-center justify-between gap-2">
-              <span className="font-medium text-gray-700">{actuator.name}</span>
-              <button
-                className={`px-4 py-1 rounded font-semibold border-2 ${
-                  actuator.isOpen
-                    ? "bg-red-100 text-red-700 border-red-600 hover:bg-red-200"
-                    : "bg-green-100 text-green-700 border-green-600 hover:bg-green-200"
-                }`}
-                onClick={() => onToggle(actuator.id, !actuator.isOpen)}
-              >
-                {actuator.isOpen ? "Fermer" : "Ouvrir"}
-              </button>
+            <div key={actuator.id} className="flex flex-col gap-1 border-b pb-2 mb-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium text-gray-700">
+                  {actuator.name || actuator.model || actuator.id}
+                </span>
+                <button
+                  className={`px-4 py-1 rounded font-semibold border-2 ${
+                    actuator.isOpen
+                      ? "bg-red-100 text-red-700 border-red-600 hover:bg-red-200"
+                      : "bg-green-100 text-green-700 border-green-600 hover:bg-green-200"
+                  }`}
+                  onClick={() => onToggle(actuator.id, !actuator.isOpen)}
+                >
+                  {actuator.isOpen ? "Fermer" : "Ouvrir"}
+                </button>
+              </div>
+              <div className="text-xs text-gray-500 flex flex-wrap gap-2">
+                {actuator.model && <span>Modèle: {actuator.model}</span>}
+                {actuator.link && <span>Type: {actuator.link}</span>}
+                {actuator.pin && <span>Pin: {actuator.pin}</span>}
+                {actuator.ip_address && <span>IP: {actuator.ip_address}</span>}
+                {actuator.address && <span>Adresse: {actuator.address}</span>}
+              </div>
             </div>
           ))}
         </div>
