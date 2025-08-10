@@ -136,7 +136,6 @@ function App() {
         const res = await fetch("/api/config");
         const data = await res.json();
         const activators = (data.config && data.config.activator) || [];
-        // Ajoute un champ isOpen par défaut (à adapter si tu as un backend pour l'état)
         setActuators(
           activators.map((a: any, idx: number) => ({
             ...a,
@@ -378,6 +377,8 @@ function App() {
           oxygenBac: undefined,
           temperatureReservoir: undefined,
           temperatureBac: undefined,
+          waterLevelReservoir: undefined,
+          waterLevelBac: undefined,
         };
       }
       // Mapping selon capteur/param
@@ -404,6 +405,12 @@ function App() {
           typeof valeur === "string" ? parseFloat(valeur) : valeur;
       if (capteur === "Thermocouple Bac" && param === "temperature")
         grouped[timestamp].temperatureBac =
+          typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "Niveau Eau Reservoir" && param === "niveau")
+        grouped[timestamp].waterLevelReservoir =
+          typeof valeur === "string" ? parseFloat(valeur) : valeur;
+      if (capteur === "Niveau Eau Bac" && param === "niveau")
+        grouped[timestamp].waterLevelBac =
           typeof valeur === "string" ? parseFloat(valeur) : valeur;
     });
     // Retourne trié par timestamp croissant
@@ -856,7 +863,7 @@ function App() {
                   temperatureReservoir: latestData.temperatureReservoir,
                 }
               }
-              waterLevel={waterLevel}
+              waterLevel={{ level: latestData && typeof latestData.waterLevelReservoir === 'number' ? latestData.waterLevelReservoir : 0 }}
               editableBornes={editableBornes as any}
             />
             {/* Groupe Bac du système */}
@@ -869,7 +876,7 @@ function App() {
                   temperatureBac: latestData.temperatureBac,
                 }
               }
-              waterLevel={waterLevel}
+              waterLevel={{ level: latestData && typeof latestData.waterLevelBac === 'number' ? latestData.waterLevelBac : 0 }}
               editableBornes={editableBornes as any}
             />
           </div>

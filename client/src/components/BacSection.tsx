@@ -112,34 +112,31 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
       {/* Niveau d'eau du bac du système */}
       <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow p-6 flex flex-col items-center border border-rose-200 hover:shadow-lg transition">
         <h3 className="text-base font-semibold text-rose-900 mb-1">Niveau d'eau</h3>
-        {editableBornes.waterLevelBac && typeof waterLevel.level === 'number' ? (
-          <div>
-            <GaugeBar
-              min={0}
-              max={100}
-              value={waterLevel.level}
-              optimalMin={editableBornes.waterLevelBac.min}
-              optimalMax={editableBornes.waterLevelBac.max}
-              unit="L"
-            />
-            <span className="text-xs text-gray-500 mt-1">
-              Intervalle recommandé : {editableBornes.waterLevelBac.min} - {editableBornes.waterLevelBac.max} L
-            </span>
-            {waterLevel.level < editableBornes.waterLevelBac.min && (
-              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                Niveau critique! Remplissez le réservoir dès que possible.
-              </div>
-            )}
+        <WaterLevel level={waterLevel.level} displayLiters />
+        {editableBornes.waterLevelBac && (
+          <GaugeBar
+            min={0}
+            max={100}
+            value={waterLevel.level}
+            optimalMin={editableBornes.waterLevelBac.min}
+            optimalMax={editableBornes.waterLevelBac.max}
+            unit="L"
+          />
+          )}
+        {editableBornes.waterLevelBac && (
+          <span className="text-xs text-gray-500 mt-1">
+            Intervalle recommandé : {editableBornes.waterLevelBac.min} - {editableBornes.waterLevelBac.max} L
+          </span>
+        )}
+        {typeof waterLevel.level === 'number' && editableBornes.waterLevelBac && (waterLevel.level < editableBornes.waterLevelBac.min) && (
+          <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+            Niveau critique! Remplissez le réservoir dès que possible.
           </div>
-        ) : (
-          <>
-            <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
-            {waterLevel.level - 55 < 20 && (
-              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                Niveau critique! Remplissez le réservoir dès que possible.
-              </div>
-            )}
-          </>
+        )}
+        {typeof waterLevel.level === 'number' && (!editableBornes.waterLevelBac) && (waterLevel.level < 20) && (
+          <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+            Niveau critique! Remplissez le réservoir dès que possible.
+          </div>
         )}
       </div>
     </div>

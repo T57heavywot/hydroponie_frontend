@@ -112,34 +112,31 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
       {/* Niveau d'eau du réservoir */}
       <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow p-6 flex flex-col items-center border border-cyan-200 hover:shadow-lg transition">
         <h3 className="text-base font-semibold text-cyan-900 mb-1">Niveau d'eau</h3>
-        {editableBornes.waterLevelReservoir && typeof waterLevel.level === 'number' ? (
-          <div>
-            <GaugeBar
-              min={0}
-              max={100}
-              value={waterLevel.level}
-              optimalMin={editableBornes.waterLevelReservoir.min}
-              optimalMax={editableBornes.waterLevelReservoir.max}
-              unit="L"
-            />
-            <span className="text-xs text-gray-500 mt-1">
-              Intervalle recommandé : {editableBornes.waterLevelReservoir.min} - {editableBornes.waterLevelReservoir.max} L
-            </span>
-            {waterLevel.level < editableBornes.waterLevelReservoir.min && (
-              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                Niveau critique! Remplissez le réservoir dès que possible.
-              </div>
-            )}
+        <WaterLevel level={waterLevel.level} displayLiters />
+        {editableBornes.waterLevelReservoir && (
+          <GaugeBar
+            min={0}
+            max={100}
+            value={waterLevel.level}
+            optimalMin={editableBornes.waterLevelReservoir.min}
+            optimalMax={editableBornes.waterLevelReservoir.max}
+            unit="L"
+          />
+          )}
+        {editableBornes.waterLevelReservoir && (
+          <span className="text-xs text-gray-500 mt-1">
+            Intervalle recommandé : {editableBornes.waterLevelReservoir.min} - {editableBornes.waterLevelReservoir.max} L
+          </span>
+        )}
+        {typeof waterLevel.level === 'number' && editableBornes.waterLevelReservoir && (waterLevel.level < editableBornes.waterLevelReservoir.min) && (
+          <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+            Niveau critique! Remplissez le réservoir dès que possible.
           </div>
-        ) : (
-          <>
-            <WaterLevel level={waterLevel.level} />
-            {waterLevel.level < 20 && (
-              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-                Niveau critique! Remplissez le réservoir dès que possible.
-              </div>
-            )}
-          </>
+        )}
+        {typeof waterLevel.level === 'number' && (!editableBornes.waterLevelReservoir) && (waterLevel.level < 20) && (
+          <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+            Niveau critique! Remplissez le réservoir dès que possible.
+          </div>
         )}
       </div>
     </div>
