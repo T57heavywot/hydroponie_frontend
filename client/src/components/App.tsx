@@ -105,8 +105,9 @@ function App() {
   // Stocke l'état initial des bornes pour la comparaison
   const initialBornesRef = useRef<any>(null);
   // ...déclaration des états...
-    const [showDrainReservoirProgress, setShowDrainReservoirProgress] = useState(false);
-    const [showConfirmDrainBac, setShowConfirmDrainBac] = useState(false);
+  const [showDrainReservoirProgress, setShowDrainReservoirProgress] =
+    useState(false);
+  const [showConfirmDrainBac, setShowConfirmDrainBac] = useState(false);
   // Mapping clé graphique -> { sensor_name, value_name }
   const keyToSensorValue = {
     phReservoir: { sensor_name: "pH Reservoir", value_name: "pH" },
@@ -456,8 +457,8 @@ function App() {
         const eventTime = new Date(ev.timestamp).getTime();
         // Affiche uniquement si l'événement est dans la période affichée
         if (eventTime >= startTime && eventTime <= lastTimestamp) {
-      const isSelected = selectedEventId === idx;
-      const lineColor = isSelected ? "#ef4444" : "#f59e42";
+          const isSelected = selectedEventId === idx;
+          const lineColor = isSelected ? "#ef4444" : "#f59e42";
           annotationsObj[`event${idx}`] = {
             type: "line",
             xMin: new Date(ev.timestamp),
@@ -759,8 +760,8 @@ function App() {
   const PARAM_LABELS: Record<string, string> = {
     phReservoir: "pH réservoir",
     phBac: "pH bac",
-    ecReservoir: "Conductivité réservoir [mS/cm]",
-    ecBac: "Conductivité bac [mS/cm]",
+    ecReservoir: "Conductivité réservoir [µS/cm]",
+    ecBac: "Conductivité bac [µS/cm]",
     oxygenReservoir: "Oxygène réservoir [mg/L]",
     oxygenBac: "Oxygène bac [mg/L]",
     temperature: "Température ambiante [°C]",
@@ -843,17 +844,17 @@ function App() {
         onConfirm={() => {
           setShowConfirmDrain(false);
           handleFlushReservoir();
-            setShowDrainReservoirProgress(true);
+          setShowDrainReservoirProgress(true);
         }}
       />
-        <DrainReservoirProgressModal
-          show={showDrainReservoirProgress}
-          onClose={() => setShowDrainReservoirProgress(false)}
-          onDone={() => {
-            setShowDrainReservoirProgress(false);
-            alert("La vidange du réservoir est terminée !");
-          }}
-        />
+      <DrainReservoirProgressModal
+        show={showDrainReservoirProgress}
+        onClose={() => setShowDrainReservoirProgress(false)}
+        onDone={() => {
+          setShowDrainReservoirProgress(false);
+          alert("La vidange du réservoir est terminée !");
+        }}
+      />
       <ConfirmDrainBacModal
         show={showConfirmDrainBac}
         onClose={() => setShowConfirmDrainBac(false)}
@@ -886,7 +887,13 @@ function App() {
                   temperatureReservoir: latestData.temperatureReservoir,
                 }
               }
-              waterLevel={{ level: latestData && typeof latestData.waterLevelReservoir === 'number' ? latestData.waterLevelReservoir : 0 }}
+              waterLevel={{
+                level:
+                  latestData &&
+                  typeof latestData.waterLevelReservoir === "number"
+                    ? latestData.waterLevelReservoir
+                    : 0,
+              }}
               editableBornes={editableBornes as any}
             />
             {/* Groupe Bac du système */}
@@ -899,7 +906,12 @@ function App() {
                   temperatureBac: latestData.temperatureBac,
                 }
               }
-              waterLevel={{ level: latestData && typeof latestData.waterLevelBac === 'number' ? latestData.waterLevelBac : 0 }}
+              waterLevel={{
+                level:
+                  latestData && typeof latestData.waterLevelBac === "number"
+                    ? latestData.waterLevelBac
+                    : 0,
+              }}
               editableBornes={editableBornes as any}
             />
           </div>
