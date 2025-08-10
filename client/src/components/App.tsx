@@ -24,7 +24,6 @@ import EventList from "./EventList";
 import ChartSection from "./ChartSection";
 import PlantBoundsCSVButtons from "./PlantBoundsCSVButtons";
 import ActuatorsModal from "./ActuatorsModal";
-import InfoBox from "./InfoBox";
 import ChartTimeSelector from "./ChartTimeSelector";
 import AmbianceSection from "./AmbianceSection";
 import ReservoirSection from "./ReservoirSection";
@@ -1205,7 +1204,6 @@ function App() {
                 </form>
               </div>
             </div>
-            <InfoBox />
           </div>
         )}
       </main>
