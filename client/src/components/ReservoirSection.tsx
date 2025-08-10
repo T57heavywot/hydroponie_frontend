@@ -100,6 +100,11 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
       <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow p-6 flex flex-col items-center border border-cyan-200 hover:shadow-lg transition">
         <h3 className="text-base font-semibold text-cyan-900 mb-1">Niveau d'eau</h3>
         <WaterLevel level={waterLevel.level} />
+        {waterLevel.level < 20 && (
+          <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+            Niveau critique! Remplissez le réservoir dès que possible.
+          </div>
+        )}
       </div>
     </div>
   </div>

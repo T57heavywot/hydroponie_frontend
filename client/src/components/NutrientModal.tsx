@@ -8,12 +8,14 @@ interface NutrientModalProps {
 }
 
 const NUTRIENT_TYPES = [
-  { key: "nitrogen", label: "Azote (N)" },
-  { key: "phosphorus", label: "Phosphore (P)" },
-  { key: "potassium", label: "Potassium (K)" },
+  { key: "nutrient1", label: "Nutriment 1" },
+  { key: "nutrient2", label: "Nutriment 2" },
+  { key: "nutrient3", label: "Nutriment 3" },
 ];
 
 const NutrientModal: React.FC<NutrientModalProps> = ({ show, onClose, onSubmit }) => {
+  // Volume d'eau ajouté (fake)
+  const fakeVolume = 10; // en Litres prochaine étape, remplacer par une valeur ddynamqiue récupérée depuis le backend (faaire la soustraction avant remplissage et après remplissage)
   const [values, setValues] = useState<{ [key: string]: number }>({});
 
   const handleChange = (key: string, val: string) => {
@@ -42,6 +44,10 @@ const NutrientModal: React.FC<NutrientModalProps> = ({ show, onClose, onSubmit }
         </button>
       }
     >
+      <div className="mb-4 text-center">
+        <span className="font-semibold text-gray-700">Volume d'eau ajouté : </span>
+        <span className="text-blue-700 font-bold">{fakeVolume} Litres</span>
+      </div>
       <div className="flex flex-col gap-4">
         {NUTRIENT_TYPES.map((nutrient) => (
           <div key={nutrient.key} className="flex items-center gap-2">
