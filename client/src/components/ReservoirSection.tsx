@@ -15,6 +15,7 @@ interface ReservoirSectionProps {
     phReservoir: { min: number; max: number };
     oxygenReservoir: { min: number; max: number };
     temperatureReservoir?: { min: number; max: number };
+    waterLevelReservoir?: { min: number; max: number };
   };
 }
 
@@ -32,7 +33,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
         {latestData && editableBornes.ecReservoir && (
           <GaugeBar
             min={0}
-            max={40}
+            max={1500}
             value={latestData.ecReservoir}
             optimalMin={editableBornes.ecReservoir.min}
             optimalMax={editableBornes.ecReservoir.max}
@@ -74,7 +75,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
         {latestData && editableBornes.oxygenReservoir && (
           <GaugeBar
             min={0}
-            max={40}
+            max={30}
             value={latestData.oxygenReservoir}
             optimalMin={editableBornes.oxygenReservoir.min}
             optimalMax={editableBornes.oxygenReservoir.max}
@@ -89,21 +90,56 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({ latestData, waterLe
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200 hover:shadow-lg transition">
         <h3 className="text-base font-semibold text-blue-900 mb-1">Température</h3>
         <span className="text-3xl font-extrabold text-blue-600 mb-1">
-          {latestData && latestData.temperatureReservoir !== undefined ? `${latestData.temperatureReservoir.toFixed(2)} °C` : "--"}
+          {latestData && typeof latestData.temperatureReservoir === 'number' ? `${latestData.temperatureReservoir.toFixed(2)} °C` : "--"}
         </span>
         <span className="text-xs text-blue-400">Dernière mesure</span>
-        <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.temperatureReservoir ? `${editableBornes.temperatureReservoir.min} - ${editableBornes.temperatureReservoir.max} °C` : "-"}
-        </span>
+        {latestData && editableBornes.temperatureReservoir && typeof latestData.temperatureReservoir === 'number' && (
+          <div>
+            <GaugeBar
+              min={0}
+              max={50}
+              value={latestData.temperatureReservoir}
+              optimalMin={editableBornes.temperatureReservoir.min}
+              optimalMax={editableBornes.temperatureReservoir.max}
+              unit="°C"
+            />
+            <span className="text-xs text-gray-500 mt-1">
+              Intervalle recommandé : {editableBornes.temperatureReservoir.min} - {editableBornes.temperatureReservoir.max} °C
+            </span>
+          </div>
+        )}
       </div>
       {/* Niveau d'eau du réservoir */}
       <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow p-6 flex flex-col items-center border border-cyan-200 hover:shadow-lg transition">
         <h3 className="text-base font-semibold text-cyan-900 mb-1">Niveau d'eau</h3>
-        <WaterLevel level={waterLevel.level} />
-        {waterLevel.level < 20 && (
-          <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-            Niveau critique! Remplissez le réservoir dès que possible.
+        {editableBornes.waterLevelReservoir && typeof waterLevel.level === 'number' ? (
+          <div>
+            <GaugeBar
+              min={0}
+              max={100}
+              value={waterLevel.level}
+              optimalMin={editableBornes.waterLevelReservoir.min}
+              optimalMax={editableBornes.waterLevelReservoir.max}
+              unit="L"
+            />
+            <span className="text-xs text-gray-500 mt-1">
+              Intervalle recommandé : {editableBornes.waterLevelReservoir.min} - {editableBornes.waterLevelReservoir.max} L
+            </span>
+            {waterLevel.level < editableBornes.waterLevelReservoir.min && (
+              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+                Niveau critique! Remplissez le réservoir dès que possible.
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            <WaterLevel level={waterLevel.level} />
+            {waterLevel.level < 20 && (
+              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+                Niveau critique! Remplissez le réservoir dès que possible.
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -15,6 +15,7 @@ interface BacSectionProps {
     phBac: { min: number; max: number };
     oxygenBac: { min: number; max: number };
     temperatureBac?: { min: number; max: number };
+    waterLevelBac?: { min: number; max: number };
   };
 }
 
@@ -32,7 +33,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
         {latestData && editableBornes.ecBac && (
           <GaugeBar
             min={0}
-            max={40}
+            max={1500}
             value={latestData.ecBac}
             optimalMin={editableBornes.ecBac.min}
             optimalMax={editableBornes.ecBac.max}
@@ -74,7 +75,7 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
         {latestData && editableBornes.oxygenBac && (
           <GaugeBar
             min={0}
-            max={40}
+            max={30}
             value={latestData.oxygenBac}
             optimalMin={editableBornes.oxygenBac.min}
             optimalMax={editableBornes.oxygenBac.max}
@@ -92,18 +93,53 @@ const BacSection: React.FC<BacSectionProps> = ({ latestData, waterLevel, editabl
           {latestData && latestData.temperatureBac !== undefined ? `${latestData.temperatureBac.toFixed(2)} °C` : "--"}
         </span>
         <span className="text-xs text-blue-400">Dernière mesure</span>
-        <span className="text-xs text-gray-500 mt-1">
-          Intervalle recommandé : {editableBornes.temperatureBac ? `${editableBornes.temperatureBac.min} - ${editableBornes.temperatureBac.max} °C` : "-"}
-        </span>
+        {latestData && editableBornes.temperatureBac && typeof latestData.temperatureBac === 'number' && (
+          <div>
+            <GaugeBar
+              min={0}
+              max={50}
+              value={latestData.temperatureBac}
+              optimalMin={editableBornes.temperatureBac.min}
+              optimalMax={editableBornes.temperatureBac.max}
+              unit="°C"
+            />
+            <span className="text-xs text-gray-500 mt-1">
+              Intervalle recommandé : {editableBornes.temperatureBac.min} - {editableBornes.temperatureBac.max} °C
+            </span>
+          </div>
+        )}
       </div>
       {/* Niveau d'eau du bac du système */}
       <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow p-6 flex flex-col items-center border border-rose-200 hover:shadow-lg transition">
         <h3 className="text-base font-semibold text-rose-900 mb-1">Niveau d'eau</h3>
-        <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
-        {waterLevel.level - 55 < 20 && (
-          <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
-            Niveau critique! Remplissez le réservoir dès que possible.
+        {editableBornes.waterLevelBac && typeof waterLevel.level === 'number' ? (
+          <div>
+            <GaugeBar
+              min={0}
+              max={100}
+              value={waterLevel.level}
+              optimalMin={editableBornes.waterLevelBac.min}
+              optimalMax={editableBornes.waterLevelBac.max}
+              unit="L"
+            />
+            <span className="text-xs text-gray-500 mt-1">
+              Intervalle recommandé : {editableBornes.waterLevelBac.min} - {editableBornes.waterLevelBac.max} L
+            </span>
+            {waterLevel.level < editableBornes.waterLevelBac.min && (
+              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+                Niveau critique! Remplissez le réservoir dès que possible.
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            <WaterLevel level={Math.max(0, waterLevel.level - 55)} />
+            {waterLevel.level - 55 < 20 && (
+              <div className="mt-4 p-2 bg-red-100 text-red-800 rounded-lg text-sm">
+                Niveau critique! Remplissez le réservoir dès que possible.
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
