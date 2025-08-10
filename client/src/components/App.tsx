@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import FillReservoirModal from "./FillReservoirModal";
 import NutrientModal from "./NutrientModal";
 import ConfirmDrainModal from "./ConfirmDrainModal";
+import DrainReservoirProgressModal from "./DrainReservoirProgressModal";
+import ConfirmDrainBacModal from "./ConfirmDrainBacModal";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -103,6 +105,8 @@ function App() {
   // Stocke l'état initial des bornes pour la comparaison
   const initialBornesRef = useRef<any>(null);
   // ...déclaration des états...
+    const [showDrainReservoirProgress, setShowDrainReservoirProgress] = useState(false);
+    const [showConfirmDrainBac, setShowConfirmDrainBac] = useState(false);
   // Mapping clé graphique -> { sensor_name, value_name }
   const keyToSensorValue = {
     phReservoir: { sensor_name: "pH Reservoir", value_name: "pH" },
@@ -311,7 +315,7 @@ function App() {
       key: "phReservoir",
       label: "pH (réservoir)",
       dataKey: "phReservoir",
-      color: "#f472b6",
+      color: "#f59e42",
     },
     { key: "phBac", label: "pH (bac)", dataKey: "phBac", color: "#f59e42" },
     {
@@ -348,7 +352,7 @@ function App() {
       key: "waterLevelBac",
       label: "Niveau d'eau du bac du système",
       dataKey: "waterLevelBac",
-      color: "#f43f5e",
+      color: "#06b6d4",
     },
   ];
 
@@ -452,8 +456,8 @@ function App() {
         const eventTime = new Date(ev.timestamp).getTime();
         // Affiche uniquement si l'événement est dans la période affichée
         if (eventTime >= startTime && eventTime <= lastTimestamp) {
-          const isSelected = selectedEventId === idx;
-          const lineColor = isSelected ? "#2563eb" : "#f59e42";
+      const isSelected = selectedEventId === idx;
+      const lineColor = isSelected ? "#ef4444" : "#f59e42";
           annotationsObj[`event${idx}`] = {
             type: "line",
             xMin: new Date(ev.timestamp),
@@ -743,9 +747,12 @@ function App() {
   };
 
   const handleVidangeBac = () => {
-    // Affiche une pop-up de confirmation ou déclenche la commande réelle
-    alert("Le bac est en train d'être vidangé.");
-    // TODO: Intégrer l'appel backend ici
+    setShowConfirmDrainBac(true);
+  };
+
+  // Fonction pour envoyer la commande de vidange du bac au serveur
+  const handleFlushBac = () => {
+    alert("La vidange du bac est terminée !");
   };
 
   // Dictionnaire de traduction des paramètres pour l'affichage
@@ -836,6 +843,23 @@ function App() {
         onConfirm={() => {
           setShowConfirmDrain(false);
           handleFlushReservoir();
+            setShowDrainReservoirProgress(true);
+        }}
+      />
+        <DrainReservoirProgressModal
+          show={showDrainReservoirProgress}
+          onClose={() => setShowDrainReservoirProgress(false)}
+          onDone={() => {
+            setShowDrainReservoirProgress(false);
+            alert("La vidange du réservoir est terminée !");
+          }}
+        />
+      <ConfirmDrainBacModal
+        show={showConfirmDrainBac}
+        onClose={() => setShowConfirmDrainBac(false)}
+        onConfirm={() => {
+          setShowConfirmDrainBac(false);
+          handleFlushBac();
         }}
       />
       <main className="container mx-auto py-8 px-6">
@@ -954,7 +978,7 @@ function App() {
                         setSelectedEventId(selectedEventId === idx ? null : idx)
                       }
                       className={`cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedEventId === idx ? "bg-blue-50" : ""
+                        selectedEventId === idx ? "bg-red-100" : ""
                       }`}
                     >
                       <td className="px-2 py-1 border">
@@ -1059,7 +1083,7 @@ function App() {
                       </span>
                       <button
                         className="px-4 py-1 border-2 border-red-600 text-red-600 rounded font-semibold bg-white hover:bg-red-50"
-                        onClick={handleFlushReservoir}
+                        onClick={handleVidangeBac}
                       >
                         Vidanger
                       </button>

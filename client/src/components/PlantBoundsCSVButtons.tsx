@@ -94,15 +94,6 @@ const PlantBoundsCSVButtons: React.FC<PlantBoundsCSVButtonsProps> = ({
       >
         Exporter CSV
       </button>
-      <label className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 border border-gray-400 cursor-pointer">
-        Importer CSV
-        <input
-          type="file"
-          accept=".csv"
-          className="hidden"
-          onChange={handleImport}
-        />
-      </label>
     </div>
   );
 };
