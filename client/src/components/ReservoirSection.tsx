@@ -142,7 +142,7 @@ const ReservoirSection: React.FC<ReservoirSectionProps> = ({
         <WaterLevel level={waterLevel.level} displayLiters />
         {editableBornes.waterLevelReservoir && (
           <GaugeBar
-            min={20}
+            min={0}
             max={100}
             value={waterLevel.level}
             optimalMin={editableBornes.waterLevelReservoir.min}
